@@ -1,0 +1,39 @@
+[agent]
+name = "Ethics Green Agent"
+description = "Multi-framework ethical evaluation agent using Google ADK. Analyzes ethical dilemmas through deontology, utilitarianism, virtue ethics, justice, and care ethics frameworks."
+version = "1.0.0"
+author = "gabrielzhou"
+
+[model]
+provider = "google"
+model_name = "gemini-2.0-flash-exp"
+api_key_env = "GEMINI_API_KEY"
+
+[deployment]
+launcher_host = "0.0.0.0"
+launcher_port = 9010
+agent_host = "0.0.0.0"
+agent_port = 9012
+public_launcher_url = "http://76.103.207.23:9010"
+public_agent_url = "http://76.103.207.23:9012"
+
+[capabilities]
+frameworks = ["deontology", "utilitarianism", "virtue_ethics", "justice", "care_ethics"]
+evaluation_type = "ethical_scenarios"
+scoring_range = "0-100"
+analysis_depth = "multi_agent_deliberation"
+
+[skills]
+stakeholder_analysis = "Identifies all affected parties and their interests in ethical dilemmas"
+deontological_evaluation = "Applies Kantian categorical imperative and duty-based ethics"
+utilitarian_calculation = "Evaluates consequences for greatest good for greatest number"
+virtue_assessment = "Analyzes character traits and virtuous behavior patterns"
+justice_framework = "Examines fairness, equality, and rights distribution"
+care_ethics = "Considers relationships, empathy, and contextual care"
+scoring_system = "Provides 0-100 scores with detailed reasoning and improvement suggestions"
+
+[api]
+health_endpoint = "/health"
+evaluate_endpoint = "/evaluate"
+card_endpoint = "/.well-known/agent-card.json"
+protocol = "a2a"

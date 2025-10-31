@@ -1,0 +1,35 @@
+[agent]
+name = "Ethics White Agent"
+description = "Ethics advisory agent providing guidance on moral dilemmas using stakeholder analysis and deontological framework."
+version = "1.0.0"
+author = "gabrielzhou"
+
+[model]
+provider = "google"
+model_name = "gemini-2.0-flash-exp"
+api_key_env = "GEMINI_API_KEY"
+
+[deployment]
+launcher_host = "0.0.0.0"
+launcher_port = 9000
+agent_host = "0.0.0.0"
+agent_port = 9002
+public_launcher_url = "http://76.103.207.23:9000"
+public_agent_url = "http://76.103.207.23:9002"
+
+[capabilities]
+analysis_type = "ethical_advisory"
+frameworks = ["stakeholder_analysis", "deontological_ethics"]
+response_style = "comprehensive_guidance"
+
+[skills]
+stakeholder_identification = "Identifies all parties affected by ethical decisions"
+deontological_analysis = "Applies Kantian principles and categorical imperative"
+ethical_guidance = "Provides actionable moral recommendations"
+comprehensive_response = "Delivers thorough analysis with practical steps"
+
+[api]
+health_endpoint = "/health"
+process_endpoint = "/process"
+card_endpoint = "/.well-known/agent-card.json"
+protocol = "a2a"
