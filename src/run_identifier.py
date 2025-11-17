@@ -16,7 +16,7 @@ ADJECTIVES = [
     "sacred", "fallen", "radiant", "dark", "furious",
     "reckless", "thundering", "ghostly", "vengeful", "eternal",
     "shattered", "howling", "lone", "hidden", "infinite",
-    "cinder", "restless", "cold", "grim", "untamed"
+    "cinder", "restless", "cold", "grim", "untamed","fire"
 ]
 
 NOUNS = [
@@ -26,7 +26,7 @@ NOUNS = [
     "mountain", "river", "tempest", "ice", "fire",
     "moon", "star", "sun", "night", "dawn",
     "serpent", "hawk", "rider", "giant", "warrior",
-    "beast", "wing", "heart", "soul", "crown"
+    "beast", "wing", "heart", "soul", "crown","clock"
 ]
 
 
