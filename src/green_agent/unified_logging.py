@@ -157,6 +157,13 @@ class GreenAgentLogger:
             msg += f" | Details: {details}"
         self._log_to_target(LogType.CALLBACK, 'info', msg)
     
+    def log_evaluator_interaction(self, step: str, details: str = ""):
+        """Log evaluator_agent interactions to the evaluation log only."""
+        msg = f"[EVALUATOR] {step}"
+        if details:
+            msg += f"\n{details}"
+        self._log_to_target(LogType.EVALUATION, 'info', msg)
+    
     # ========================================
     # Shared logging functions
     # ========================================
@@ -221,6 +228,10 @@ def log_logic_handoff(from_component: str, to_component: str, context: str = "")
 def log_step(component: str, step: str, details: str = ""):
     """Log a major step or event in the green agent's logic."""
     get_logger().log_step(component, step, details)
+
+def log_evaluator_interaction(step: str, details: str = ""):
+    """Log evaluator_agent interactions to the evaluation log only."""
+    get_logger().log_evaluator_interaction(step, details)
 
 def log_error(error_msg: str, exception: Optional[Exception] = None):
     """Log an error during evaluation."""
