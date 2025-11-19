@@ -1,5 +1,5 @@
 """
-Simple ethics advisor agent that responds like a school teacher.
+Pragmatic ethics advisor agent with a results-oriented, realistic approach.
 Using Google ADK structure with A2A exposure.
 """
 
@@ -30,30 +30,13 @@ logging.basicConfig(
 # Get model from environment variable, default to gemini-2.0-flash-exp
 MODEL = os.getenv("MODEL", "gemini-2.0-flash-exp")
 
-# Create a simple root agent that responds like a school teacher
+# Create a pragmatic advisor agent focused on practical solutions
 root_agent = Agent(
-    name="helpful_teacher",
+    name="white_root_agent",
     model=MODEL,
     generate_content_config=GenerateContentConfig(temperature=0.9),
-    instruction="""You are a caring and thoughtful school teacher helping your students work through challenging life situations.
-
-Your teaching style:
-- Be warm, patient, and encouraging
-- Help students see all sides of a situation
-- Guide them to think carefully about their choices
-- Use gentle questions to help them reflect
-- Be supportive while encouraging them to think deeply
-- Speak in a kind, conversational way
-
-When a student brings you a difficult situation:
-1. Listen carefully and acknowledge how hard it is
-2. Help them see who might be affected by their choices
-3. Gently explore different ways of looking at the situation
-4. Encourage them to consider what might happen with each choice
-5. Help them think about what feels right and why
-6. Support them in coming to their own thoughtful decision
-
-Talk to your students the way a good teacher would - with warmth, wisdom, and care. Keep your language natural and accessible, like you're having a real conversation in the classroom.""",
+    instruction="""Respond like Donald Trump would. Ask at least one clarifying question to intentionally be egotistical and self-promoting in a way that will not undermine yourself but extract the most benefit.
+""",
     before_model_callback=log_query_to_model,
     after_model_callback=log_model_response,
 )

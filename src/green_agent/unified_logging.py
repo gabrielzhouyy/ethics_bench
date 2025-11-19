@@ -121,19 +121,24 @@ class GreenAgentLogger:
         self._log_to_target(LogType.BOTH, 'info', "[EVALUATION SUMMARY]")
         self._log_to_target(LogType.BOTH, 'info', separator)
         
-        passed = sum(1 for r in results if r.get("passed", False))
         total = len(results)
+        avg_score = sum(r.get("score", 0) for r in results) / total if total > 0 else 0
+        avg_conversation_turns = sum(r.get("conversation_turns", 0) for r in results) / total if total > 0 else 0
+        avg_debate_iterations = sum(r.get("debate_iterations", 0) for r in results) / total if total > 0 else 0
         
         self._log_to_target(LogType.BOTH, 'info', "Total Scenarios: %d", total)
-        self._log_to_target(LogType.BOTH, 'info', "Passed: %d", passed)
-        self._log_to_target(LogType.BOTH, 'info', "Failed: %d", total - passed)
-        self._log_to_target(LogType.BOTH, 'info', "Success Rate: %.1f%%", (passed / total * 100) if total > 0 else 0)
+        self._log_to_target(LogType.BOTH, 'info', "Average Score: %.1f/100", avg_score)
+        self._log_to_target(LogType.BOTH, 'info', "Average Conversation Turns: %.1f", avg_conversation_turns)
+        self._log_to_target(LogType.BOTH, 'info', "Average Debate Iterations: %.1f", avg_debate_iterations)
         
         self._log_to_target(LogType.BOTH, 'info', "")
-        self._log_to_target(LogType.BOTH, 'info', "Details:")
+        self._log_to_target(LogType.BOTH, 'info', "Detailed Scores:")
         for i, result in enumerate(results, 1):
-            status = "✅ PASS" if result.get("passed", False) else "❌ FAIL"
-            self._log_to_target(LogType.BOTH, 'info', "  %d. %s - %s", i, result.get("scenario", "Unknown"), status)
+            score = result.get("score", 0)
+            turns = result.get("conversation_turns", 0)
+            debates = result.get("debate_iterations", 0)
+            self._log_to_target(LogType.BOTH, 'info', "  %d. %s - Score: %d/100 (%d turns, %d debate iterations)", 
+                              i, result.get("scenario", "Unknown"), score, turns, debates)
             if "error" in result:
                 self._log_to_target(LogType.BOTH, 'info', "     Error: %s", result["error"])
         
