@@ -48,8 +48,33 @@ root_agent = Agent(
 
 # Expose the agent via A2A protocol using official Google ADK pattern
 # This creates a FastAPI app that serves the agent at port 9002
-# Agent card will be available at: http://localhost:9002/.well-known/agent-card.json
+# Agent card will be available at: http://155.248.198.72:9002/.well-known/agent-card.json
 a2a_app = to_a2a(root_agent, port=9002)
 
-# To run this agent:
-# uvicorn src.white_agent.agent:a2a_app --host localhost --port 9002
+
+if __name__ == "__main__":
+    import socket
+    
+    # Auto-detect environment
+    hostname = socket.gethostname()
+    if 'lambda' in hostname.lower() or os.path.exists('/etc/lambda-labs'):
+        public_ip = "155.248.198.72"
+        is_remote = True
+    else:
+        public_ip = "localhost"
+        is_remote = False
+    
+    print("="*80)
+    print("⚪ WHITE AGENT - Pragmatic Ethics Advisor")
+    print("="*80)
+    print(f"Starting A2A server on http://{public_ip}:9002")
+    print("Personality: Donald Trump-inspired pragmatic approach")
+    print("="*80)
+    
+    if is_remote:
+        print("\n⚠️  IMPORTANT: Ensure firewall allows port 9002\n")
+    else:
+        print("\n📍 Running locally - accessible at http://localhost:9002\n")
+    
+    import uvicorn
+    uvicorn.run(a2a_app, host="0.0.0.0", port=9002)
