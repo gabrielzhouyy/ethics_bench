@@ -1,7 +1,7 @@
 [agent]
 name = "Ethics Bench V3 - Green Evaluator Agent"
 description = "Multi-agent ethics evaluation system that assesses LLM responses to ethical dilemmas using conversational engagement, stakeholder analysis, debate room weight calibration, and framework-based scoring."
-url = "http://YOUR_PUBLIC_IP:YOUR_AGENT_PORT"
+url = "http://129.159.45.125:9003"
 
 [agent.capabilities]
 # The green agent evaluates white agents on ethical reasoning
@@ -41,5 +41,5 @@ scenarios = "Real-world ethical dilemmas from NYT Ethicist column"
 
 [launcher]
 # Launcher configuration for battle reset
-host = "YOUR_PUBLIC_IP"
-port = "YOUR_LAUNCHER_PORT"
+host = "129.159.45.125"
+port = 9000

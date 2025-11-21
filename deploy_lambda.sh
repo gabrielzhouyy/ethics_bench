@@ -1,6 +1,6 @@
 #!/bin/bash
 # Deployment script for Lambda Labs or local deployment
-# Works on: Lambda Labs (155.248.198.72) or localhost
+# Works on: Lambda Labs (129.159.45.125) or localhost
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -8,7 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Detect environment
 if [[ $(hostname) == *"lambda"* ]] || [[ -f /etc/lambda-labs ]]; then
     DEPLOY_ENV="lambda"
-    PUBLIC_IP="155.248.198.72"
+    PUBLIC_IP="129.159.45.125"
 else
     DEPLOY_ENV="local"
     PUBLIC_IP="localhost"

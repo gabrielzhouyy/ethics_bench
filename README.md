@@ -30,7 +30,7 @@ The initial prompt is deliberately concise and only *encourages* (not requires) 
 ```
 Green Agent (Evaluator)
   ├─ Conversational Loop with White Agent
-  │   ├─ response_classifier: AI-based classification of responses
+  │   ├─ response_classifier: Classifies response as clarification or final ans
   │   └─ context_generator: Generates realistic contextual information with uncertainty
   │
   └─ Decision Room (LoopAgent)
@@ -41,7 +41,7 @@ Green Agent (Evaluator)
       │   ├─ Virtue Ethics (character and virtues)
       │   ├─ Justice Ethics (fairness and rights)
       │   └─ Care Ethics (relationships and empathy)
-      └─ critic_agent: Scores response 0-125 points
+      └─ critic_agent: Scores response 0-100 points
 ```
 
 ### Key Features
@@ -90,14 +90,33 @@ cp .env.example .env
 
 ### Running the Evaluation
 
+#### Option 1: Quick Start (Recommended)
 ```bash
-# Run the full evaluation system
+# Activates venv, starts both agents, runs evaluation
 python main_v3.py
 ```
 
+#### Option 2: Manual Control
+```bash
+# Terminal 1: Start white agent
+source .venv/bin/activate
+python -m src.white_agent.agent
+
+# Terminal 2: Start launcher (starts green agent and runs evaluation)
+source .venv/bin/activate
+python -m src.launcher_v3
+```
+
+#### Option 3: Deploy to Lambda Labs
+```bash
+# Auto-detects environment and deploys both agents
+chmod +x deploy_lambda.sh
+./deploy_lambda.sh
+```
+
 This will:
-1. Launch the white agent server (localhost:9002)
-2. Run the green evaluation agent
+1. Launch the white agent server (port 9002)
+2. Run the green evaluation agent (port 9003) 
 3. Evaluate each scenario through conversational dialogue
 4. Generate detailed logs in `src/green_agent/agent_logs/`
 
@@ -171,10 +190,75 @@ When adding new scenarios:
 4. Keep scenario descriptions realistic and detailed
 5. Test that the scenario elicits clarifying questions from capable models
 
+## Deployment Options
+
+### Local Development
+```bash
+# Quick start - runs everything
+python main_v3.py
+
+# Or manual control
+# Terminal 1
+python -m src.white_agent.agent  # Port 9002
+
+# Terminal 2  
+python -m src.launcher_v3  # Starts green agent on 9003 and runs evaluation
+```
+
+### Lambda Labs (129.159.45.125)
+```bash
+# Auto-detects Lambda Labs environment
+chmod +x deploy_lambda.sh
+./deploy_lambda.sh
+
+# Access at:
+# - White: http://129.159.45.125:9002
+# - Green: http://129.159.45.125:9003
+```
+
+### Running as A2A Service Only
+```bash
+# Just run green agent server (for AgentBeats integration)
+python src/green_agent/green_server.py  # Port 9003
+```
+
+## Ports
+
+- **9002**: White agent (being evaluated)
+- **9003**: Green agent (evaluator)
+- **9000**: Launcher (for AgentBeats resets)
+
+## Troubleshooting
+
+**Port in use:**
+```bash
+lsof -ti:9002 | xargs kill -9
+lsof -ti:9003 | xargs kill -9
+```
+
+**Check agents:**
+```bash
+curl http://localhost:9002/.well-known/agent-card.json
+curl http://localhost:9003/.well-known/agent-card.json
+```
+
+**View logs:**
+```bash
+tail -f src/green_agent/agent_logs/*.log
+tail -f src/white_agent/agent_logs/*.log
+```
+
 ## License
 
-[Add license information]
+MIT License
 
 ## Citation
 
-[Add citation information if publishing]
+```bibtex
+@software{ethics_bench_v3,
+  title = {Ethics Bench V3: Multi-Agent Ethical Reasoning Evaluation},
+  author = {Gabriel Zhou},
+  year = {2025},
+  url = {https://github.com/yourusername/ethics-bench}
+}
+```
