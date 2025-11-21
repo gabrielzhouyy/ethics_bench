@@ -48,7 +48,7 @@ root_agent = Agent(
 
 # Expose the agent via A2A protocol using official Google ADK pattern
 # This creates a FastAPI app that serves the agent at port 9002
-# Agent card will be available at: http://155.248.198.72:9002/.well-known/agent-card.json
+# Agent card will be available at: http://129.159.45.125:9002/.well-known/agent-card.json
 a2a_app = to_a2a(root_agent, port=9002)
 
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     # Auto-detect environment
     hostname = socket.gethostname()
     if 'lambda' in hostname.lower() or os.path.exists('/etc/lambda-labs'):
-        public_ip = "155.248.198.72"
+        public_ip = "129.159.45.125"
         is_remote = True
     else:
         public_ip = "localhost"

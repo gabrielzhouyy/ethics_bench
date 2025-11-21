@@ -90,7 +90,7 @@ if __name__ == "__main__":
     # Auto-detect environment
     hostname = socket.gethostname()
     if 'lambda' in hostname.lower() or os.path.exists('/etc/lambda-labs'):
-        public_ip = "155.248.198.72"
+        public_ip = "129.159.45.125"
         is_remote = True
     else:
         public_ip = "localhost"
