@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  ethics-bench:
+    build:
+      context: .
+    image: ethics-bench:latest
+    container_name: ethics-bench
+    environment:
+      - ETHICS_BENCH_RUN_ID=${ETHICS_BENCH_RUN_ID:-dev}
+    ports:
+      - "9002:9002"
+    volumes:
+      - ./src/green_agent/agent_logs:/app/src/green_agent/agent_logs
+    command: ["python", "main_v3.py"]
