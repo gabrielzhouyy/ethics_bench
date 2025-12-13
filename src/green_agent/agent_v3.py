@@ -1216,23 +1216,30 @@ async def run_evaluation_v3(white_agent_url: str = "http://localhost:9002"):
     
     results = []
     
-    # Randomly select one scenario from the pool
-    scenario = random.choice(SCENARIOS)
-    print(f"📋 Randomly selected scenario: {scenario['title']}\n")
+    # Select 3 random scenarios
+    num_scenarios = 3
+    selected_scenarios = random.sample(SCENARIOS, num_scenarios)
     
-    # Evaluate the selected scenario
-    try:
-        result = await evaluate_scenario_multiagent(white_agent_url, scenario)
-        results.append(result)
-    except Exception as e:
-        error_msg = f"Error evaluating '{scenario['title']}'"
-        log_error(error_msg, e)
-        print(f"❌ {error_msg}: {e}")
-        results.append({
-            "scenario": scenario['title'],
-            "error": str(e),
-            "score": 0
-        })
+    print(f"📋 Selected {len(selected_scenarios)} scenarios for evaluation\n")
+    
+    for i, scenario in enumerate(selected_scenarios):
+        print(f"--- Scenario {i+1}/{len(selected_scenarios)}: {scenario['title']} ---")
+        try:
+            result = await evaluate_scenario_multiagent(white_agent_url, scenario)
+            results.append(result)
+        except Exception as e:
+            error_msg = f"Error evaluating '{scenario['title']}'"
+            log_error(error_msg, e)
+            print(f"❌ {error_msg}: {e}")
+            results.append({
+                "scenario": scenario['title'],
+                "error": str(e),
+                "score": 0
+            })
+        
+        # Add a small delay between scenarios
+        if i < len(selected_scenarios) - 1:
+            await asyncio.sleep(2)
     
     # Summary
     log_evaluation_summary(results)
