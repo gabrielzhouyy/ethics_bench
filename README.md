@@ -1,6 +1,8 @@
 # Ethics Bench
 
-A multi-agent system that evaluates the ethical quality of an LLM’s responses and estimates the risk of unethical output.
+A multi-agent system that evaluates the ethical quality of an LLM’s responses and estimates the risk of unethical output. 
+
+[Demo](https://www.youtube.com/watch?v=nXOMxPbjFss&feature=youtu.be)
 
 ## Overview
 
