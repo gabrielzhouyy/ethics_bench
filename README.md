@@ -216,15 +216,42 @@ python -m src.launcher_v3  # Starts green agent on 9003 and runs evaluation
 ```
 
 ### Docker (Plug-and-Play)
+
+**Option 1: Pull pre-built image (recommended)**
+```bash
+# Pull the latest image from GitHub Container Registry
+docker pull ghcr.io/gabrielzhouyy/ethics-bench:latest
+
+# Run evaluation with your API key
+docker run --rm \
+  -e GOOGLE_API_KEY="your-api-key-here" \
+  -e ETHICS_BENCH_RUN_ID=$(date +%Y%m%d-%H%M%S) \
+  -p 9002:9002 \
+  -v "$(pwd)/logs:/app/src/green_agent/agent_logs" \
+  ghcr.io/gabrielzhouyy/ethics-bench:latest
+```
+
+**Option 2: Build locally**
 ```bash
 # Build the image
 docker build -t ethics-bench:latest .
 
 # Run evaluation (white agent on 9002 inside container)
 docker run --rm \
+  -e GOOGLE_API_KEY="your-api-key-here" \
   -e ETHICS_BENCH_RUN_ID=$(date +%Y%m%d-%H%M%S) \
   -p 9002:9002 \
+  -v "$(pwd)/logs:/app/src/green_agent/agent_logs" \
   ethics-bench:latest
+```
+
+**Using docker-compose:**
+```bash
+# Create .env file with your API key
+echo "GOOGLE_API_KEY=your-api-key-here" > .env
+
+# Run with compose
+docker-compose up
 ```
 
 
