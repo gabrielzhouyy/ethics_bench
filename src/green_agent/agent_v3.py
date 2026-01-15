@@ -1199,13 +1199,15 @@ Respond in JSON format:
         }
 
 
-async def run_evaluation_v3(white_agent_url: str = "http://localhost:9002"):
+async def run_evaluation_v3(white_agent_url: str = None):
     """
     Main evaluation runner using multi-agent architecture.
     
     Args:
-        white_agent_url: URL of the white agent to evaluate
+        white_agent_url: URL of the white agent to evaluate (defaults to env var or localhost)
     """
+    if white_agent_url is None:
+        white_agent_url = os.getenv("WHITE_AGENT_URL", "http://localhost:9002")
     print(f"\n{'='*60}")
     print(f"🚀 Green Agent V3 - Multi-Agent Evaluation")
     print(f"{'='*60}")

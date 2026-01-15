@@ -27,7 +27,9 @@ COPY . .
 # Create logs directory to avoid permission issues
 RUN mkdir -p src/green_agent/agent_logs
 
-# Expose white agent port (internal visibility; optional)
+# Default to running green agent, but can be overridden by docker-compose command
+# Green agent will run via "python -m src.green_agent.green_server --host 0.0.0.0 --port 9003"
+CMD ["python", "-m", "src.green_agent.green_server", "--host", "0.0.0.0", "--port", "9003"]
 EXPOSE 9002
 
 # Default command: run the evaluation launcher

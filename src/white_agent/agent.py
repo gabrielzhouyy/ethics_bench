@@ -47,34 +47,51 @@ root_agent = Agent(
 # ========================================
 
 # Expose the agent via A2A protocol using official Google ADK pattern
-# This creates a FastAPI app that serves the agent at port 9002
-# Agent card will be available at: http://129.159.45.125:9002/.well-known/agent-card.json
-a2a_app = to_a2a(root_agent, port=9002)
+# This creates a FastAPI app that serves the agent
+# Agent card will be available at: /.well-known/agent-card.json
+a2a_app = to_a2a(root_agent, port=9002)  # Default port, will be overridden by CLI args
 
 
 if __name__ == "__main__":
+    import argparse
     import socket
+    import uvicorn
+    import asyncio
     
-    # Auto-detect environment
+    # Parse CLI arguments (matching rpesl/agentx purple agent pattern)
+    parser = argparse.ArgumentParser(description="Run the white agent A2A server")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind the server")
+    parser.add_argument("--port", type=int, default=9002, help="Port to bind the server")
+    parser.add_argument("--card-url", type=str, help="External URL to provide in the agent card")
+    args = parser.parse_args()
+    
+    # Determine agent URL for the card
+    agent_url = args.card_url or f'http://{args.host}:{args.port}/'
+    
+    # Auto-detect environment for informational message
     hostname = socket.gethostname()
     if 'lambda' in hostname.lower() or os.path.exists('/etc/lambda-labs'):
-        public_ip = "129.159.45.125"
         is_remote = True
     else:
-        public_ip = "localhost"
         is_remote = False
     
     print("="*80)
     print("⚪ WHITE AGENT - Pragmatic Ethics Advisor")
     print("="*80)
-    print(f"Starting A2A server on http://{public_ip}:9002")
+    print(f"Starting A2A server on http://{args.host}:{args.port}")
     print("Personality: Donald Trump-inspired pragmatic approach")
     print("="*80)
     
     if is_remote:
-        print("\n⚠️  IMPORTANT: Ensure firewall allows port 9002\n")
+        print(f"\n⚠️  IMPORTANT: Ensure firewall allows port {args.port}")
+        print(f"⚠️  Accessible at {agent_url}\n")
     else:
-        print("\n📍 Running locally - accessible at http://localhost:9002\n")
+        print(f"\n📍 Running locally - accessible at http://{args.host}:{args.port}/\n")
     
-    import uvicorn
-    uvicorn.run(a2a_app, host="0.0.0.0", port=9002)
+    # Create A2A app with the specified port
+    a2a_app = to_a2a(root_agent, port=args.port)
+    
+    uvicorn_config = uvicorn.Config(a2a_app, host=args.host, port=args.port)
+    uvicorn_server = uvicorn.Server(uvicorn_config)
+    
+    asyncio.run(uvicorn_server.serve())
