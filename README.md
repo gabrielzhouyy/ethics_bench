@@ -344,7 +344,24 @@ Both agents expose A2A (Agent-to-Agent) protocol endpoints. The agent cards are 
 - **White Agent**: `http://white_agent:9009/.well-known/agent-card.json`
 - **Green Agent**: `http://green_agent:9009/.well-known/agent-card.json`
 
-**Important**: Agent card URLs must match the Docker service names in `docker-compose.yml` for proper A2A client resolution. The custom agent cards are configured in:
+**Important**: Agent card URLs must match the Docker service names in `docker-compose.yml` for proper A2A client resolution.
+
+**Configuring Agent Card URLs**:
+
+The agent card URLs are determined in this priority order:
+1. `--card-url` CLI argument
+2. `AGENT_CARD_URL` environment variable (direct override)
+3. `WHITE_AGENT_URL` / `GREEN_AGENT_URL` environment variables (reuses existing config)
+4. Default: `http://white_agent:9009` / `http://green_agent:9009`
+
+For different docker-compose configurations (e.g., service names with hyphens like `green-agent`), set the environment variables:
+```yaml
+environment:
+  - GREEN_AGENT_URL=http://green-agent:9009
+  - WHITE_AGENT_URL=http://white-agent:9009
+```
+
+The custom agent cards are configured in:
 - `src/white_agent/agent.py`: `create_custom_agent_card()`
 - `src/green_agent/green_server.py`: `create_custom_agent_card()`
 

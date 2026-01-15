@@ -89,8 +89,11 @@ if __name__ == "__main__":
         agent_url = args.card_url
     elif os.getenv("AGENT_CARD_URL"):
         agent_url = os.getenv("AGENT_CARD_URL")
+    elif os.getenv("WHITE_AGENT_URL"):
+        # Extract just the base URL without path (e.g., http://white-agent:9009)
+        agent_url = os.getenv("WHITE_AGENT_URL").rstrip('/')
     else:
-        # Default: use Docker service name (only works in Docker network)
+        # Default: use Docker service name with underscore (ethics_bench docker-compose)
         agent_url = "http://white_agent:9009"
     
     # Auto-detect environment for informational message
