@@ -98,22 +98,48 @@ cp .env.example .env
 python main_v3.py
 ```
 
-#### Option 2: Manual Control
+#### Option 2: Manual Control (Local)
 ```bash
 # Terminal 1: Start white agent
 source .venv/bin/activate
-python -m src.white_agent.agent
+PYTHONPATH=$PWD python src/white_agent/agent.py --port 9009
 
-# Terminal 2: Start launcher (starts green agent and runs evaluation)
+# Terminal 2: Start green agent
 source .venv/bin/activate
-python -m src.launcher_v3
+PYTHONPATH=$PWD python src/green_agent/green_server.py --port 9009
+
+# Terminal 3: Run evaluation
+source .venv/bin/activate
+PYTHONPATH=$PWD python src/launcher_v3 --white-url http://localhost:9009
 ```
 
 This will:
-1. Launch the white agent server (port 9002)
-2. Run the green evaluation agent (port 9003) 
+1. Launch the white agent server (port 9009)
+2. Launch the green evaluation agent (port 9009)
 3. Evaluate each scenario through conversational dialogue
-4. Generate detailed logs in `src/green_agent/agent_logs/`
+4. Generate detailed logs in `src/green_agent/agent_logs/` and `src/white_agent/agent_logs/`
+
+#### Option 3: Docker Compose (Recommended)
+```bash
+# Set your API key
+export GOOGLE_API_KEY="your-api-key-here"
+
+# Start all services (both agents on internal port 9009, client container for testing)
+docker-compose up -d
+
+# Test white agent from client container
+docker-compose exec agentbeats-client curl http://white_agent:9009/.well-known/agent-card.json
+
+# Test green agent from client container
+docker-compose exec agentbeats-client curl http://green_agent:9009/.well-known/agent-card.json
+
+# View logs
+docker-compose logs -f white_agent
+docker-compose logs -f green_agent
+
+# Shut down
+docker-compose down
+```
 
 ### Expected Behavior
 
@@ -209,85 +235,104 @@ When adding new scenarios:
 # Quick start - runs everything
 python main_v3.py
 
-# Or manual control
-# Terminal 1
-python -m src.white_agent.agent  # Port 9002
-
-# Terminal 2  
-python -m src.launcher_v3  # Starts green agent on 9003 and runs evaluation
+# Or manual control (see Option 2 above)
 ```
 
-### Docker (Plug-and-Play)
+### Docker & Docker Compose
 
-**Option 1: Pull pre-built image (recommended)**
-```bash
-# Pull the latest image from GitHub Container Registry
-docker pull ghcr.io/gabrielzhouyy/ethics-bench:latest
-
-# Run evaluation with your API key
-docker run --rm \
-  -e GOOGLE_API_KEY="your-api-key-here" \
-  -e ETHICS_BENCH_RUN_ID=$(date +%Y%m%d-%H%M%S) \
-  -p 9002:9002 \
-  -v "$(pwd)/logs:/app/src/green_agent/agent_logs" \
-  ghcr.io/gabrielzhouyy/ethics-bench:latest
-```
-
-**Option 2: Build locally**
-```bash
-# Build the image
-docker build -t ethics-bench:latest .
-
-# Run evaluation (white agent on 9002 inside container)
-docker run --rm \
-  -e GOOGLE_API_KEY="your-api-key-here" \
-  -e ETHICS_BENCH_RUN_ID=$(date +%Y%m%d-%H%M%S) \
-  -p 9002:9002 \
-  -v "$(pwd)/logs:/app/src/green_agent/agent_logs" \
-  ethics-bench:latest
-```
-
-**Using docker-compose:**
+**Using docker-compose (Recommended):**
 ```bash
 # Create .env file with your API key
 echo "GOOGLE_API_KEY=your-api-key-here" > .env
 
-# Run with compose
-docker-compose up
+# Start all services
+docker-compose up -d
+
+# View service status
+docker-compose ps
+
+# Test agent endpoints from client container
+docker-compose exec agentbeats-client curl http://white_agent:9009/.well-known/agent-card.json
+docker-compose exec agentbeats-client curl http://green_agent:9009/.well-known/agent-card.json
+
+# View logs
+docker-compose logs -f
+
+# Shut down
+docker-compose down
 ```
 
+**Building and running individual images:**
+```bash
+# Build the image
+docker build -t ethics-bench:latest .
 
+# Run white agent
+docker run --rm -e MODEL="gemini-2.0-flash-exp" -p 9009:9009 ethics-bench:latest \
+  python src/white_agent/agent.py --host 0.0.0.0 --port 9009
+
+# Run green agent (separate terminal)
+docker run --rm -e MODEL="gemini-2.0-flash-exp" -p 9002:9009 ethics-bench:latest \
+  python src/green_agent/green_server.py --host 0.0.0.0 --port 9009 --white-url http://white_agent:9009
+```
 
 ### Running as A2A Service Only
 ```bash
-# Just run green agent server (for AgentBeats integration)
-python src/green_agent/green_server.py  # Port 9003
+# Start white agent server (for AgentBeats integration)
+python src/white_agent/agent.py --port 9009
+
+# Start green agent server (for AgentBeats integration)
+python src/green_agent/green_server.py --port 9009
 ```
 
 ## Ports
 
-- **9002**: White agent (being evaluated)
-- **9003**: Green agent (evaluator)
-- **9000**: Launcher (for AgentBeats resets)
+- **9009**: Both agents (white and green) bind to this internally
+  - **White Agent**: Exposed externally on port 9009
+  - **Green Agent**: Exposed externally on port 9002 (via docker-compose)
+- **9000**: Launcher (for AgentBeats resets) - future use
 
 ## Troubleshooting
 
-**Port in use:**
+**Port in use (local development):**
 ```bash
-lsof -ti:9002 | xargs kill -9
-lsof -ti:9003 | xargs kill -9
+lsof -ti:9009 | xargs kill -9
 ```
 
-**Check agents:**
+**Check agents (local):**
 ```bash
-curl http://localhost:9002/.well-known/agent-card.json
-curl http://localhost:9003/.well-known/agent-card.json
+curl http://localhost:9009/.well-known/agent-card.json      # White agent
+curl http://localhost:9002/.well-known/agent-card.json      # Green agent (if exposed)
 ```
 
-**View logs:**
+**Check agents (Docker Compose):**
+```bash
+# From client container
+docker-compose exec agentbeats-client curl http://white_agent:9009/.well-known/agent-card.json
+docker-compose exec agentbeats-client curl http://green_agent:9009/.well-known/agent-card.json
+
+# Or check Docker network
+docker network inspect ethics_bench_agentbeats
+```
+
+**View logs (local):**
 ```bash
 tail -f src/green_agent/agent_logs/*.log
 tail -f src/white_agent/agent_logs/*.log
+```
+
+**View logs (Docker Compose):**
+```bash
+docker-compose logs -f white_agent
+docker-compose logs -f green_agent
+docker-compose logs -f agentbeats-client
+```
+
+**Set PYTHONPATH for local development:**
+```bash
+# Required for relative imports when running scripts directly
+export PYTHONPATH=$PWD
+python src/white_agent/agent.py --port 9009
 ```
 
 ## License

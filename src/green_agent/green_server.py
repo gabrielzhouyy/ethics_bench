@@ -13,7 +13,7 @@ from src.green_agent.agent_v3 import run_evaluation_v3
 load_dotenv()
 
 model_name = os.getenv("MODEL", "gemini-2.0-flash-exp")
-white_agent_url = os.getenv("WHITE_AGENT_URL", "http://localhost:9002")
+white_agent_url = os.getenv("WHITE_AGENT_URL", "http://white_agent:9009")  # Docker-friendly default
 
 # Create the green evaluation agent
 green_agent = Agent(
@@ -83,10 +83,6 @@ async def handle_evaluation_request(url: str = None) -> dict:
         }
 
 
-# Convert to A2A app with default port (will be overridden by CLI args)
-a2a_app = to_a2a(green_agent, port=9003)
-
-
 if __name__ == "__main__":
     import argparse
     import socket
@@ -95,12 +91,12 @@ if __name__ == "__main__":
     
     # Parse CLI arguments (matching rpesl/agentx green agent pattern)
     parser = argparse.ArgumentParser(description="Run the green agent A2A server")
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind the server")
-    parser.add_argument("--port", type=int, default=9003, help="Port to bind the server")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the server")
+    parser.add_argument("--port", type=int, default=9009, help="Port to bind the server")
     parser.add_argument("--card-url", type=str, help="External URL to provide in the agent card")
     args = parser.parse_args()
     
-    # Determine agent URL for the card
+    # Determine agent URL for the card (optional for custom agent_card)
     agent_url = args.card_url or f'http://{args.host}:{args.port}/'
     
     # Auto-detect environment for informational message
@@ -125,10 +121,11 @@ if __name__ == "__main__":
         print(f"\n📍 Running locally - accessible at http://{args.host}:{args.port}/")
         print(f"📍 White agent configured at {white_agent_url}\n")
     
-    # Create A2A app with the specified port
-    a2a_app = to_a2a(green_agent, port=args.port)
+    # Single A2A app creation (no port kwarg; matches ADK docs/examples)
+    a2a_app = to_a2a(green_agent)  # Optional: , agent_card=your_custom_card if needed
     
     uvicorn_config = uvicorn.Config(a2a_app, host=args.host, port=args.port)
     uvicorn_server = uvicorn.Server(uvicorn_config)
     
+    # Serve (logs "Uvicorn running on http://0.0.0.0:9009")
     asyncio.run(uvicorn_server.serve())

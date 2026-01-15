@@ -5,7 +5,8 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     LC_ALL=C.UTF-8 \
-    LANG=C.UTF-8
+    LANG=C.UTF-8 \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
@@ -24,13 +25,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY . .
 
-# Create logs directory to avoid permission issues
-RUN mkdir -p src/green_agent/agent_logs
+# Create logs directories to avoid permission issues
+RUN mkdir -p src/green_agent/agent_logs src/white_agent/agent_logs
 
-# Default to running green agent, but can be overridden by docker-compose command
-# Green agent will run via "python -m src.green_agent.green_server --host 0.0.0.0 --port 9003"
-CMD ["python", "-m", "src.green_agent.green_server", "--host", "0.0.0.0", "--port", "9003"]
-EXPOSE 9002
+# Expose port 9009 (used by both agents internally)
+EXPOSE 9009
 
-# Default command: run the evaluation launcher
+# Default command can be overridden by docker-compose
 CMD ["python", "main_v3.py"]

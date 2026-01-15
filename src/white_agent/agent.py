@@ -2,7 +2,7 @@
 Pragmatic ethics advisor agent with a results-oriented, realistic approach.
 Using Google ADK structure with A2A exposure.
 """
-
+import argparse
 import os
 import logging
 from dotenv import load_dotenv
@@ -46,26 +46,19 @@ root_agent = Agent(
 # Application Section - A2A Exposure
 # ========================================
 
-# Expose the agent via A2A protocol using official Google ADK pattern
-# This creates a FastAPI app that serves the agent
-# Agent card will be available at: /.well-known/agent-card.json
-a2a_app = to_a2a(root_agent, port=9002)  # Default port, will be overridden by CLI args
-
-
 if __name__ == "__main__":
-    import argparse
     import socket
     import uvicorn
     import asyncio
     
     # Parse CLI arguments (matching rpesl/agentx purple agent pattern)
     parser = argparse.ArgumentParser(description="Run the white agent A2A server")
-    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind the server")
-    parser.add_argument("--port", type=int, default=9002, help="Port to bind the server")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the server")
+    parser.add_argument("--port", type=int, default=9009, help="Port to bind the server")
     parser.add_argument("--card-url", type=str, help="External URL to provide in the agent card")
     args = parser.parse_args()
     
-    # Determine agent URL for the card
+    # Determine agent URL for the card (optional for custom agent_card)
     agent_url = args.card_url or f'http://{args.host}:{args.port}/'
     
     # Auto-detect environment for informational message
@@ -88,10 +81,11 @@ if __name__ == "__main__":
     else:
         print(f"\n📍 Running locally - accessible at http://{args.host}:{args.port}/\n")
     
-    # Create A2A app with the specified port
-    a2a_app = to_a2a(root_agent, port=args.port)
+    # Single A2A app creation (no port kwarg; matches ADK docs/examples)
+    a2a_app = to_a2a(root_agent)  # Optional: , agent_card=your_custom_card if needed
     
     uvicorn_config = uvicorn.Config(a2a_app, host=args.host, port=args.port)
     uvicorn_server = uvicorn.Server(uvicorn_config)
     
+    # Serve (logs "Uvicorn running on http://0.0.0.0:9009")
     asyncio.run(uvicorn_server.serve())

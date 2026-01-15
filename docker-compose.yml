@@ -1,14 +1,60 @@
 version: "3.9"
 services:
-  ethics-bench:
+  white_agent:
     build:
       context: .
+      dockerfile: Dockerfile
     image: ethics-bench:latest
-    container_name: ethics-bench
+    container_name: white_agent
     environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - MODEL=${MODEL:-gemini-2.0-flash-exp}
       - ETHICS_BENCH_RUN_ID=${ETHICS_BENCH_RUN_ID:-dev}
     ports:
-      - "9002:9002"
+      - "9009:9009"
+    volumes:
+      - ./src/white_agent/agent_logs:/app/src/white_agent/agent_logs
+    command: ["python", "src/white_agent/agent.py", "--host", "0.0.0.0", "--port", "9009"]
+    networks:
+      - agentbeats
+
+  green_agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ethics-bench:latest
+    container_name: green_agent
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - MODEL=${MODEL:-gemini-2.0-flash-exp}
+      - ETHICS_BENCH_RUN_ID=${ETHICS_BENCH_RUN_ID:-dev}
+      - WHITE_AGENT_URL=http://white_agent:9009
+    ports:
+      - "9002:9009"
     volumes:
       - ./src/green_agent/agent_logs:/app/src/green_agent/agent_logs
-    command: ["python", "main_v3.py"]
+    command: ["python", "src/green_agent/green_server.py", "--host", "0.0.0.0", "--port", "9009"]
+    depends_on:
+      - white_agent
+    networks:
+      - agentbeats
+
+  agentbeats-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ethics-bench:latest
+    container_name: agentbeats-client
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - MODEL=${MODEL:-gemini-2.0-flash-exp}
+    command: ["sleep", "infinity"]
+    depends_on:
+      - white_agent
+      - green_agent
+    networks:
+      - agentbeats
+
+networks:
+  agentbeats:
+    driver: bridge
