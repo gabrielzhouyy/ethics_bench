@@ -335,6 +335,55 @@ export PYTHONPATH=$PWD
 python src/white_agent/agent.py --port 9009
 ```
 
+## A2A Agent-to-Agent Messaging
+
+### Agent Card Configuration
+
+Both agents expose A2A (Agent-to-Agent) protocol endpoints. The agent cards are automatically generated with correct Docker service URLs:
+
+- **White Agent**: `http://white_agent:9009/.well-known/agent-card.json`
+- **Green Agent**: `http://green_agent:9009/.well-known/agent-card.json`
+
+**Important**: Agent card URLs must match the Docker service names in `docker-compose.yml` for proper A2A client resolution. The custom agent cards are configured in:
+- `src/white_agent/agent.py`: `create_custom_agent_card()`
+- `src/green_agent/green_server.py`: `create_custom_agent_card()`
+
+### Sending A2A Messages
+
+Use the `my_a2a` utility module to send messages:
+
+```python
+import asyncio
+from src.my_util import my_a2a
+
+async def send_to_agent():
+    # Get agent card
+    card = await my_a2a.get_agent_card('http://green_agent:9009')
+    
+    # Send message
+    response = await my_a2a.send_message(
+        'http://green_agent:9009',
+        'Your message here'
+    )
+    
+    return response
+
+asyncio.run(send_to_agent())
+```
+
+### Testing A2A Connectivity
+
+Test from client container:
+
+```bash
+# Fetch agent cards
+docker-compose exec agentbeats-client curl http://white_agent:9009/.well-known/agent-card.json
+docker-compose exec agentbeats-client curl http://green_agent:9009/.well-known/agent-card.json
+
+# Verify agent URLs in cards
+docker-compose exec agentbeats-client curl http://green_agent:9009/.well-known/agent-card.json | grep '"url"'
+```
+
 ## License
 
 MIT License

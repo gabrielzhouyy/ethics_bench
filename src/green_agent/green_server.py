@@ -7,6 +7,7 @@ from google.adk import Agent
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from google.genai import types
 from dotenv import load_dotenv
+from a2a.types import AgentCard, AgentSkill, AgentCapabilities
 
 from src.green_agent.agent_v3 import run_evaluation_v3
 
@@ -42,6 +43,30 @@ Respond to evaluation requests by running the full evaluation pipeline and retur
         temperature=0.7,
     )
 )
+
+
+# Custom agent card with correct Docker URL
+def create_custom_agent_card(url: str = "http://green_agent:9009") -> AgentCard:
+    """Create a properly configured agent card for the green evaluator."""
+    return AgentCard(
+        name="Ethics Bench V3 - Green Evaluator Agent",
+        description="Multi-agent ethics evaluation system that assesses LLM responses to ethical dilemmas using conversational engagement, stakeholder analysis, debate room weight calibration, and framework-based scoring.",
+        url=url,
+        version="1.0.0",
+        protocol_version="0.3.0",
+        default_input_modes=["text/plain"],
+        default_output_modes=["text/plain"],
+        preferred_transport="JSONRPC",
+        capabilities=AgentCapabilities(),
+        skills=[
+            AgentSkill(
+                name="evaluate_ethical_response",
+                id="evaluate",
+                description="Evaluates an agent's response to an ethical dilemma using multi-agent analysis with 5 ethical frameworks (deontological, utilitarian, care, justice, virtue)",
+                tags=["evaluation", "ethics"]
+            )
+        ]
+    )
 
 
 # Since the evaluation logic is complex and already implemented,
@@ -96,8 +121,15 @@ if __name__ == "__main__":
     parser.add_argument("--card-url", type=str, help="External URL to provide in the agent card")
     args = parser.parse_args()
     
-    # Determine agent URL for the card (optional for custom agent_card)
-    agent_url = args.card_url or f'http://{args.host}:{args.port}/'
+    # Determine agent URL for the card
+    # Prefer --card-url, then environment variable, then default Docker DNS name
+    if args.card_url:
+        agent_url = args.card_url
+    elif os.getenv("AGENT_CARD_URL"):
+        agent_url = os.getenv("AGENT_CARD_URL")
+    else:
+        # Default: use Docker service name (only works in Docker network)
+        agent_url = "http://green_agent:9009"
     
     # Auto-detect environment for informational message
     hostname = socket.gethostname()
@@ -110,6 +142,7 @@ if __name__ == "__main__":
     print("🟢 GREEN AGENT - Ethics Evaluation System")
     print("="*80)
     print(f"Starting A2A server on http://{args.host}:{args.port}")
+    print(f"Agent Card URL: {agent_url}")
     print("Architecture: Multi-agent evaluation with debate room")
     print("Frameworks: Deontology, Utilitarianism, Care, Justice, Virtue")
     print("="*80)
@@ -121,8 +154,11 @@ if __name__ == "__main__":
         print(f"\n📍 Running locally - accessible at http://{args.host}:{args.port}/")
         print(f"📍 White agent configured at {white_agent_url}\n")
     
-    # Single A2A app creation (no port kwarg; matches ADK docs/examples)
-    a2a_app = to_a2a(green_agent)  # Optional: , agent_card=your_custom_card if needed
+    # Create custom agent card with correct URL
+    custom_card = create_custom_agent_card(url=agent_url)
+    
+    # Single A2A app creation with custom card
+    a2a_app = to_a2a(green_agent, agent_card=custom_card)
     
     uvicorn_config = uvicorn.Config(a2a_app, host=args.host, port=args.port)
     uvicorn_server = uvicorn.Server(uvicorn_config)

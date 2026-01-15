@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from google.genai.types import GenerateContentConfig
 from google.adk.agents import Agent
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
+from a2a.types import AgentCard, AgentSkill, AgentCapabilities
 
 # Local imports
 from src.white_agent.callback_logging import log_query_to_model, log_model_response
@@ -42,6 +43,30 @@ root_agent = Agent(
 )
 
 
+# Custom agent card with correct Docker URL
+def create_custom_agent_card(url: str = "http://white_agent:9009") -> AgentCard:
+    """Create a properly configured agent card for the white advisor."""
+    return AgentCard(
+        name="Ethics Bench V3 - White Agent (Trump Persona)",
+        description="Pragmatic ethics advisor with a Donald Trump-inspired approach. Responds to ethical dilemmas with egotistical and self-promoting clarifying questions to extract maximum benefit.",
+        url=url,
+        version="1.0.0",
+        protocol_version="0.3.0",
+        default_input_modes=["text/plain"],
+        default_output_modes=["text/plain"],
+        preferred_transport="JSONRPC",
+        capabilities=AgentCapabilities(),
+        skills=[
+            AgentSkill(
+                name="provide_pragmatic_advice",
+                id="advise",
+                description="Provides pragmatic ethical advice with a Trump-inspired personality, asking clarifying questions from a self-interested perspective",
+                tags=["advice", "ethics", "pragmatic"]
+            )
+        ]
+    )
+
+
 # ========================================
 # Application Section - A2A Exposure
 # ========================================
@@ -58,8 +83,15 @@ if __name__ == "__main__":
     parser.add_argument("--card-url", type=str, help="External URL to provide in the agent card")
     args = parser.parse_args()
     
-    # Determine agent URL for the card (optional for custom agent_card)
-    agent_url = args.card_url or f'http://{args.host}:{args.port}/'
+    # Determine agent URL for the card
+    # Prefer --card-url, then environment variable, then default Docker DNS name
+    if args.card_url:
+        agent_url = args.card_url
+    elif os.getenv("AGENT_CARD_URL"):
+        agent_url = os.getenv("AGENT_CARD_URL")
+    else:
+        # Default: use Docker service name (only works in Docker network)
+        agent_url = "http://white_agent:9009"
     
     # Auto-detect environment for informational message
     hostname = socket.gethostname()
@@ -72,6 +104,7 @@ if __name__ == "__main__":
     print("⚪ WHITE AGENT - Pragmatic Ethics Advisor")
     print("="*80)
     print(f"Starting A2A server on http://{args.host}:{args.port}")
+    print(f"Agent Card URL: {agent_url}")
     print("Personality: Donald Trump-inspired pragmatic approach")
     print("="*80)
     
@@ -81,8 +114,11 @@ if __name__ == "__main__":
     else:
         print(f"\n📍 Running locally - accessible at http://{args.host}:{args.port}/\n")
     
-    # Single A2A app creation (no port kwarg; matches ADK docs/examples)
-    a2a_app = to_a2a(root_agent)  # Optional: , agent_card=your_custom_card if needed
+    # Create custom agent card with correct URL
+    custom_card = create_custom_agent_card(url=agent_url)
+    
+    # Single A2A app creation with custom card
+    a2a_app = to_a2a(root_agent, agent_card=custom_card)
     
     uvicorn_config = uvicorn.Config(a2a_app, host=args.host, port=args.port)
     uvicorn_server = uvicorn.Server(uvicorn_config)
