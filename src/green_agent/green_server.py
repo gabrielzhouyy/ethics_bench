@@ -14,7 +14,7 @@ from src.green_agent.agent_v3 import run_evaluation_v3
 load_dotenv()
 
 model_name = os.getenv("MODEL", "gemini-2.0-flash-exp")
-white_agent_url = os.getenv("WHITE_AGENT_URL", "http://white_agent:9009")  # Docker-friendly default
+white_agent_url = os.getenv("WHITE_AGENT_URL", "http://white-agent:9009")  # Docker-friendly default
 
 # Create the green evaluation agent
 green_agent = Agent(
@@ -132,7 +132,7 @@ if __name__ == "__main__":
         agent_url = os.getenv("GREEN_AGENT_URL").rstrip('/')
     else:
         # Default: use Docker service name with underscore (ethics_bench docker-compose)
-        agent_url = "http://green_agent:9009"
+        agent_url = "http://green-agent:9009"
     
     # Auto-detect environment for informational message
     hostname = socket.gethostname()
