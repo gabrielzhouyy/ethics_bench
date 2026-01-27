@@ -5,12 +5,15 @@ Handles both evaluation logging and callback logging with shared infrastructure.
 
 import logging
 import os
+import uuid
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from enum import Enum
 
-# Import shared run identifier
-from src.run_identifier import get_run_identifier
+
+def get_run_identifier() -> str:
+    """Generate a unique run identifier."""
+    return str(uuid.uuid4())[:8]
 
 
 class LogType(Enum):

@@ -1,19 +1,20 @@
-name: Build and Push White Agent Image
+name: Build and Push Purple Agent Image
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'src/white_agent/**'
-      - 'Dockerfile'
-      - 'requirements.txt'
-      - '.github/workflows/white-agent-publish.yml'
+      - 'scenarios/domain_adapt_crm/semantic_white_baseline.py'
+      - 'Dockerfile.purple'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/purple-agent-publish.yml'
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: gabrielzhouyy/white_agent
+  IMAGE_NAME: gabrielzhouyy/purple_agent
 
 jobs:
   build-and-push:
@@ -49,16 +50,14 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
 
-      - name: Build and push White Agent Docker image
+      - name: Build and push Purple Agent Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Dockerfile.purple
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          target: runtime
-          build-args: |
-            AGENT_TYPE=white
+          platforms: linux/amd64,linux/arm64

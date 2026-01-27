@@ -1,0 +1,132 @@
+id: "legal_to_crm_multiturn001"
+title: "Legal → CRM: Construction defect case (Multi-turn)"
+domains:
+  source: "Legal_Construction"
+  target: "CRM"
+
+turns:
+  - turn: 1
+    user_message: |
+      Our client ACME Construction is filing a defect claim against subcontractor
+      Skyline Drywall for water intrusion issues on a construction project.
+      Please structure this into CRM records.
+    
+    requirements:
+      expected_output_format: "JSON with 'entities' and 'relationships' arrays."
+    
+    gold_ontology:
+      entities:
+        - type: "Account"
+          name: "ACME Construction"
+          role: "PrimaryCustomer"
+        - type: "Account"
+          name: "Skyline Drywall"
+          role: "Counterparty"
+        - type: "Case"
+          subject: "Construction defect - water intrusion"
+          status: "Open"
+      
+      relationships:
+        - from: "Case"
+          to: "ACME Construction"
+          type: "PrimaryAccount"
+        - from: "Case"
+          to: "Skyline Drywall"
+          type: "Counterparty"
+
+  - turn: 2
+    user_message: |
+      More details: The property is Lot 12 in the Oakridge project. 
+      ACME discovered the water intrusion on June 15, 2023 during inspection. 
+      The defect was caused by improper caulking work. 
+      We also need to track the project manager Sarah Chen who oversees this property.
+    
+    gold_ontology:
+      entities:
+        - type: "Account"
+          name: "ACME Construction"
+        - type: "Account"
+          name: "Skyline Drywall"
+        - type: "Case"
+          subject: "Construction defect - water intrusion"
+        - type: "Contact"
+          name: "Sarah Chen"
+          role: "ProjectManager"
+        - type: "Interaction"
+          subject: "Water intrusion discovery"  # Changed from description to match judge
+          date: "2023-06-15"
+        - type: "Property"
+          lot_number: "Lot 12"
+          project: "Oakridge"
+      
+      relationships:
+        - from: "Case"
+          to: "ACME Construction"
+          type: "PrimaryAccount"
+        - from: "Case"
+          to: "Skyline Drywall"
+          type: "Counterparty"
+        - from: "Sarah Chen"
+          to: "ACME Construction"
+          type: "EmployedBy"
+        - from: "Interaction"
+          to: "Case"
+          type: "DiscoveredIssue"
+        - from: "Property"
+          to: "Case"
+          type: "SubjectProperty"
+        - from: "Skyline Drywall"
+          to: "Interaction"
+          type: "ResponsibleFor"
+
+  - turn: 3
+    user_message: |
+      Correction: I was mistaken about Sarah Chen. She doesn't work for ACME—
+      she works for the general contractor BuildRight Inc. 
+      Also, the defect wasn't just improper caulking; it was a structural issue 
+      with flashing installation. BuildRight hired Skyline for the drywall work.
+    
+    gold_ontology:
+      entities:
+        - type: "Account"
+          name: "ACME Construction"
+        - type: "Account"
+          name: "Skyline Drywall"
+        - type: "Account"
+          name: "BuildRight Inc"
+          role: "GeneralContractor"
+        - type: "Case"
+          subject: "Construction defect - water intrusion"
+        - type: "Property"
+          lot_number: "Lot 12"
+        - type: "Contact"
+          name: "Sarah Chen"
+          account: "BuildRight Inc"
+        - type: "Interaction"
+          subject: "Water intrusion discovery"
+      
+      relationships:
+        - from: "Case"
+          to: "ACME Construction"
+          type: "PrimaryAccount"
+        - from: "Case"
+          to: "Skyline Drywall"
+          type: "Counterparty"
+        - from: "Interaction"
+          to: "Case"
+          type: "DiscoveredIssue"
+        - from: "Property"
+          to: "Case"
+          type: "SubjectProperty"
+        - from: "Skyline Drywall"
+          to: "Interaction"
+          type: "ResponsibleFor"
+        - from: "Sarah Chen"
+          to: "BuildRight Inc"
+          type: "EmployedBy"
+        - from: "BuildRight Inc"
+          to: "Skyline Drywall"
+          type: "Hired"
+        - from: "BuildRight Inc"
+          to: "ACME Construction"
+          type: "ContractedBy"

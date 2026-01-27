@@ -3,11 +3,17 @@ Green Agent A2A Server
 Exposes the multi-agent evaluation system via A2A protocol for AgentBeats integration.
 """
 import os
+import sys
+from pathlib import Path
+
 from google.adk import Agent
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from google.genai import types
 from dotenv import load_dotenv
 from a2a.types import AgentCard, AgentSkill, AgentCapabilities
+
+# Add src to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.green_agent.agent_v3 import run_evaluation_v3
 
