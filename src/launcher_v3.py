@@ -25,7 +25,7 @@ async def launch_evaluation_v3():
     print(f"\nRun ID: {run_id}")
     
     # Configuration
-    white_url = "http://localhost:9002"
+    white_url = "http://localhost:9019"
     
     # Set environment variable
     env = os.environ.copy()
@@ -34,7 +34,7 @@ async def launch_evaluation_v3():
     # Start white agent
     print(f"\nLaunching white agent at {white_url}...")
     white_process = subprocess.Popen(
-        ["uvicorn", "src.white_agent.agent:a2a_app", "--host", "localhost", "--port", "9002"],
+        ["uvicorn", "src.white_agent.agent:a2a_app", "--host", "localhost", "--port", "9019"],
         cwd=os.path.dirname(os.path.dirname(__file__)),
         env=env,
         stdout=None,
