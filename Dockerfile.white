@@ -25,10 +25,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create logs directory to avoid permission issues
-RUN mkdir -p src/green_agent/agent_logs
+RUN mkdir -p src/white_agent/agent_logs
 
-# Expose green agent port
-EXPOSE 9009
+# Expose white agent port
+EXPOSE 9019
 
-# Run green agent server
-CMD ["python", "-m", "src.green_agent.green_server"]
+# Run white agent
+CMD ["python", "-m", "src.white_agent.agent"]
