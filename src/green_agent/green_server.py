@@ -114,104 +114,96 @@ async def handle_evaluation_request(url: str = None) -> dict:
         }
 
 
-# Create custom A2A app with evaluation intercept
-def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard) -> FastAPI:
-    """Create an A2A FastAPI app that intercepts messages to run evaluation."""
-    # Start with the standard A2A app
+# Create custom A2A app with evaluation intercept using middleware
+def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
+    """Create an A2A app that intercepts messages to run evaluation."""
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from starlette.responses import Response as StarletteResponse
+    import re
+    
+    # Start with the standard A2A app (Starlette)
     base_app = to_a2a(agent, agent_card=agent_card)
     
-    # Override the POST /jsonrpc endpoint to intercept evaluation requests
-    original_jsonrpc_handler = None
-    for route in base_app.routes:
-        if hasattr(route, 'path') and route.path == '/jsonrpc' and hasattr(route, 'endpoint'):
-            original_jsonrpc_handler = route.endpoint
-            break
+    class EvaluationMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request: Request, call_next):
+            # Only intercept POST requests to /jsonrpc
+            if request.method == "POST" and request.url.path == "/jsonrpc":
+                try:
+                    # Read the request body
+                    body_bytes = await request.body()
+                    body = json.loads(body_bytes)
+                    
+                    print(f"[GREEN_AGENT] Received A2A request: {json.dumps(body, indent=2)}")
+                    
+                    # Check if this is an evaluation request
+                    if body.get("method") == "send_message":
+                        params = body.get("params", {})
+                        messages = params.get("messages", [])
+                        
+                        # Look for participant URL in the message content or metadata
+                        participant_url = None
+                        for msg in messages:
+                            content = msg.get("content", "")
+                            if "http://" in content or "https://" in content:
+                                url_match = re.search(r'https?://[^\s]+', content)
+                                if url_match:
+                                    participant_url = url_match.group(0)
+                                    break
+                        
+                        # Also check metadata/context
+                        metadata = params.get("metadata", {})
+                        if not participant_url:
+                            participant_url = metadata.get("participant_url") or metadata.get("purple_agent_url")
+                        
+                        print(f"[GREEN_AGENT] Detected evaluation request for: {participant_url or 'default white agent'}")
+                        
+                        # Run the evaluation
+                        results = await handle_evaluation_request(participant_url)
+                        
+                        # Save results to leaderboard
+                        if results.get("evaluation_complete"):
+                            print(f"[GREEN_AGENT] Evaluation complete. Average score: {results.get('average_score')}")
+                            try:
+                                save_evaluation_results(
+                                    results=results.get("results", []),
+                                    agent_name="evaluated_agent",
+                                    persona="unknown"
+                                )
+                                record_submission_provenance(
+                                    agent_name="evaluated_agent",
+                                    green_image="ghcr.io/gabrielzhouyy/ethics_bench:latest",
+                                    purple_image="unknown"
+                                )
+                            except Exception as e:
+                                print(f"[GREEN_AGENT] Warning: Could not save to leaderboard: {e}")
+                        
+                        # Return results in A2A response format
+                        response_content = json.dumps(results, indent=2)
+                        response_data = {
+                            "jsonrpc": "2.0",
+                            "id": body.get("id"),
+                            "result": {
+                                "messages": [{
+                                    "role": "assistant",
+                                    "content": response_content
+                                }]
+                            }
+                        }
+                        return StarletteResponse(
+                            content=json.dumps(response_data),
+                            media_type="application/json"
+                        )
+                
+                except Exception as e:
+                    print(f"[GREEN_AGENT] Error in middleware: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # For all other requests, pass through to original handler
+            return await call_next(request)
     
-    @base_app.post("/jsonrpc")
-    async def custom_jsonrpc_handler(request: Request):
-        """Custom handler that detects evaluation requests and runs the pipeline."""
-        try:
-            body = await request.json()
-            print(f"[GREEN_AGENT] Received A2A request: {json.dumps(body, indent=2)}")
-            
-            # Check if this is an evaluation request (method: "send_message" or similar)
-            if body.get("method") == "send_message":
-                params = body.get("params", {})
-                messages = params.get("messages", [])
-                
-                # Look for participant URL in the message content or metadata
-                participant_url = None
-                for msg in messages:
-                    content = msg.get("content", "")
-                    # Check if URL is explicitly mentioned in message
-                    if "http://" in content or "https://" in content:
-                        # Extract URL from content
-                        import re
-                        url_match = re.search(r'https?://[^\s]+', content)
-                        if url_match:
-                            participant_url = url_match.group(0)
-                            break
-                
-                # Also check metadata/context
-                metadata = params.get("metadata", {})
-                if not participant_url:
-                    participant_url = metadata.get("participant_url") or metadata.get("purple_agent_url")
-                
-                print(f"[GREEN_AGENT] Detected evaluation request for: {participant_url or 'default white agent'}")
-                
-                # Run the evaluation
-                results = await handle_evaluation_request(participant_url)
-                
-                # Save results to leaderboard
-                if results.get("evaluation_complete"):
-                    print(f"[GREEN_AGENT] Evaluation complete. Average score: {results.get('average_score')}")
-                    # Save to leaderboard
-                    try:
-                        save_evaluation_results(
-                            results=results.get("results", []),
-                            agent_name="evaluated_agent",
-                            persona="unknown"
-                        )
-                        record_submission_provenance(
-                            agent_name="evaluated_agent",
-                            green_image="ghcr.io/gabrielzhouyy/ethics_bench:latest",
-                            purple_image="unknown"
-                        )
-                    except Exception as e:
-                        print(f"[GREEN_AGENT] Warning: Could not save to leaderboard: {e}")
-                
-                # Return results in A2A response format
-                response_content = json.dumps(results, indent=2)
-                return JSONResponse({
-                    "jsonrpc": "2.0",
-                    "id": body.get("id"),
-                    "result": {
-                        "messages": [{
-                            "role": "assistant",
-                            "content": response_content
-                        }]
-                    }
-                })
-            
-            # For non-evaluation requests, use original handler
-            if original_jsonrpc_handler:
-                return await original_jsonrpc_handler(request)
-            else:
-                return JSONResponse({
-                    "jsonrpc": "2.0",
-                    "id": body.get("id"),
-                    "error": {"code": -32601, "message": "Method not found"}
-                })
-                
-        except Exception as e:
-            print(f"[GREEN_AGENT] Error in custom handler: {e}")
-            import traceback
-            traceback.print_exc()
-            return JSONResponse({
-                "jsonrpc": "2.0",
-                "id": body.get("id", None),
-                "error": {"code": -32603, "message": f"Internal error: {str(e)}"}
-            })
+    # Add middleware to the base app
+    base_app.add_middleware(EvaluationMiddleware)
     
     return base_app
 
