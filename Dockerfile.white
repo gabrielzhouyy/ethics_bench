@@ -24,8 +24,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY . .
 
-# Create logs directory to avoid permission issues
-RUN mkdir -p src/white_agent/agent_logs
+# Create directories for results and logs
+RUN mkdir -p src/white_agent/agent_logs results submissions
 
 # Expose white agent port
 EXPOSE 9002

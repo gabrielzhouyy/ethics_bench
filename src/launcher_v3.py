@@ -8,6 +8,8 @@ import os
 from src.green_agent.agent_v3 import run_evaluation_v3
 from src.my_util import my_a2a
 from src.run_identifier import get_run_identifier
+from src.leaderboard.leaderboard import save_evaluation_results
+from src.leaderboard.provenance import record_submission_provenance
 
 
 async def launch_evaluation_v3():
@@ -72,6 +74,39 @@ async def launch_evaluation_v3():
         print(f"\nRun ID: {run_id}")
         print(f"Total scenarios: {len(results)}")
         print(f"Results logged to: src/green_agent/agent_logs/evaluation_{run_id}.log")
+        
+        # Save results to leaderboard
+        print("\n" + "="*80)
+        print("📊 SAVING LEADERBOARD RESULTS")
+        print("="*80)
+        
+        config = {
+            "run_id": run_id,
+            "num_scenarios": len(results),
+            "frameworks": ["deontological", "utilitarian", "care", "justice", "virtue"],
+        }
+        
+        # Save leaderboard result
+        leaderboard_path = save_evaluation_results(
+            participant_name="white_agent",
+            evaluation_results=results,
+            config=config,
+            run_id=run_id,
+        )
+        print(f"✅ Leaderboard result saved: {leaderboard_path}")
+        
+        # Record provenance
+        green_agent_image = os.getenv("GREEN_AGENT_IMAGE", "ghcr.io/gabrielzhouyy/ethics_bench:latest")
+        white_agent_image = os.getenv("WHITE_AGENT_IMAGE", "ghcr.io/gabrielzhouyy/white_agent:latest")
+        
+        provenance_path = record_submission_provenance(
+            participant_name="white_agent",
+            scenario_name="ethics_bench_multi_scenario",
+            green_agent_image=green_agent_image,
+            white_agent_image=white_agent_image,
+            config=config,
+        )
+        print(f"✅ Provenance recorded: {provenance_path}")
         
     except Exception as e:
         print(f"\n❌ ERROR during evaluation: {e}")
