@@ -42,15 +42,19 @@ async def get_agent_card(url: str) -> AgentCard | None:
 
 async def wait_agent_ready(url: str, timeout: int = 10) -> bool:
     """Wait until an A2A agent is ready by checking its agent card.
-    
+
     Args:
         url: The base URL of the A2A agent
         timeout: Maximum number of seconds to wait
-        
+
     Returns:
-        True if agent is ready, False if timeout
+        True if agent is ready
+
+    Raises:
+        RuntimeError: If timeout reached with persistent network errors
     """
     retry_cnt = 0
+    last_error = None
     while retry_cnt < timeout:
         retry_cnt += 1
         try:
@@ -59,11 +63,16 @@ async def wait_agent_ready(url: str, timeout: int = 10) -> bool:
                 return True
             else:
                 print(f"Agent card not available yet, retrying {retry_cnt}/{timeout}")
+                last_error = None  # Card request succeeded but returned None
         except Exception as e:
             print(f"Error getting agent card (attempt {retry_cnt}/{timeout}): {e}")
-        
+            last_error = e
+
         await asyncio.sleep(1)
-    
+
+    # Distinguish between "agent not ready" vs "network error"
+    if last_error is not None:
+        raise RuntimeError(f"Failed to connect to agent at {url} after {timeout} attempts: {last_error}")
     return False
 
 
@@ -106,7 +115,15 @@ async def send_message(
         request_id = uuid.uuid4().hex
         req = SendMessageRequest(id=request_id, params=params)
         response = await client.send_message(request=req)
-        
+
+        # Validate response has expected structure
+        if not response:
+            raise RuntimeError("No response received from agent")
+        if not hasattr(response, 'root') or not response.root:
+            raise RuntimeError("Response missing root object")
+        if hasattr(response.root, 'error') and response.root.error:
+            raise RuntimeError(f"Agent returned error: {response.root.error}")
+
         return response
     finally:
         await httpx_client.aclose()

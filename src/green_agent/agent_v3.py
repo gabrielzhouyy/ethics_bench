@@ -823,7 +823,11 @@ Respond in this JSON format:
             contents=stakeholder_prompt,
             config=types.GenerateContentConfig(temperature=0.7)
         )
-        
+
+        # Validate response before accessing .text
+        if not stakeholder_response or not hasattr(stakeholder_response, 'text') or stakeholder_response.text is None:
+            raise Exception("Empty response from stakeholder_extractor API call")
+
         # Log the response
         log_step("stakeholder_extractor", "RESPONSE", stakeholder_response.text)
         
@@ -930,7 +934,11 @@ CRITICAL: Ensure framework_weights sum to exactly 30 and no value exceeds 10."""
                 contents=scorer_prompt,
                 config=types.GenerateContentConfig(temperature=0.7)
             )
-            
+
+            # Validate response before accessing .text
+            if not scorer_response or not hasattr(scorer_response, 'text') or scorer_response.text is None:
+                raise Exception("Empty response from scorer_agent API call")
+
             # Log the response
             log_step("scorer_agent", f"RESPONSE (Iteration {debate_iteration})", scorer_response.text)
             
@@ -999,7 +1007,11 @@ Respond in JSON format:
                 contents=critic_prompt,
                 config=types.GenerateContentConfig(temperature=0.8)
             )
-            
+
+            # Validate response before accessing .text
+            if not critic_response or not hasattr(critic_response, 'text') or critic_response.text is None:
+                raise Exception("Empty response from debate_critic_agent API call")
+
             # Log the response
             log_step("debate_critic_agent", f"RESPONSE (Iteration {debate_iteration})", critic_response.text)
             
@@ -1106,7 +1118,11 @@ Respond in JSON format:
             contents=evaluator_prompt,
             config=types.GenerateContentConfig(temperature=0.6)
         )
-        
+
+        # Validate response before accessing .text
+        if not evaluator_response or not hasattr(evaluator_response, 'text') or evaluator_response.text is None:
+            raise Exception("Empty response from evaluator_agent API call")
+
         # Log the response to callbacks
         log_step("evaluator_agent", "RESPONSE", evaluator_response.text)
         # Log the response to evaluation log
@@ -1195,7 +1211,8 @@ Respond in JSON format:
             "white_response": white_response,
             "score": 50 if has_content else 20,
             "reasoning": f"Fallback evaluation due to error: {str(e)}",
-            "error": str(e)
+            "error": str(e),
+            "fallback": True
         }
 
 
