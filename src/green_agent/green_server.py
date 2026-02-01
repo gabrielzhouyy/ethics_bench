@@ -135,25 +135,28 @@ def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
                     
                     print(f"[GREEN_AGENT] Received A2A request: {json.dumps(body, indent=2)}")
                     
-                    # Check if this is an evaluation request
-                    if body.get("method") == "send_message":
+                    # Check if this is an evaluation request (A2A protocol uses "message/send")
+                    if body.get("method") in ("message/send", "send_message"):
                         params = body.get("params", {})
-                        messages = params.get("messages", [])
-                        
-                        # Look for participant URL in the message content or metadata
+
+                        # Extract participant URL from message content or metadata
                         participant_url = None
-                        for msg in messages:
-                            content = msg.get("content", "")
-                            if "http://" in content or "https://" in content:
-                                url_match = re.search(r'https?://[^\s]+', content)
+
+                        # A2A format: params.message.parts[].text
+                        message = params.get("message", {})
+                        parts = message.get("parts", [])
+                        for part in parts:
+                            text = part.get("text", "")
+                            if "http://" in text or "https://" in text:
+                                url_match = re.search(r'https?://[^\s\'"]+', text)
                                 if url_match:
-                                    participant_url = url_match.group(0)
+                                    participant_url = url_match.group(0).rstrip('.,;:')
                                     break
-                        
-                        # Also check metadata/context
+
+                        # Also check metadata
                         metadata = params.get("metadata", {})
                         if not participant_url:
-                            participant_url = metadata.get("participant_url") or metadata.get("purple_agent_url")
+                            participant_url = metadata.get("participant_url") or metadata.get("white_agent_url")
                         
                         print(f"[GREEN_AGENT] Detected evaluation request for: {participant_url or 'default white agent'}")
                         
