@@ -14,7 +14,7 @@ from src.green_agent.agent_v3 import run_evaluation_v3
 load_dotenv()
 
 model_name = os.getenv("MODEL", "gemini-2.0-flash-exp")
-white_agent_url = os.getenv("WHITE_AGENT_URL", "http://white-agent:9019")  # Docker-friendly default
+white_agent_url = os.getenv("WHITE_AGENT_URL", "http://white-agent:9002")  # Docker-friendly default
 
 # Create the green evaluation agent
 green_agent = Agent(
@@ -46,7 +46,7 @@ Respond to evaluation requests by running the full evaluation pipeline and retur
 
 
 # Custom agent card with correct Docker URL
-def create_custom_agent_card(url: str = "http://green_agent:9009") -> AgentCard:
+def create_custom_agent_card(url: str = "http://green_agent:9003") -> AgentCard:
     """Create a properly configured agent card for the green evaluator."""
     return AgentCard(
         name="Ethics Bench V3 - Green Evaluator Agent",
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # Parse CLI arguments (matching rpesl/agentx green agent pattern)
     parser = argparse.ArgumentParser(description="Run the green agent A2A server")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the server")
-    parser.add_argument("--port", type=int, default=9009, help="Port to bind the server")
+    parser.add_argument("--port", type=int, default=9003, help="Port to bind the server")
     parser.add_argument("--card-url", type=str, help="External URL to provide in the agent card")
     args = parser.parse_args()
     
@@ -166,5 +166,5 @@ if __name__ == "__main__":
     uvicorn_config = uvicorn.Config(a2a_app, host=args.host, port=args.port)
     uvicorn_server = uvicorn.Server(uvicorn_config)
     
-    # Serve (logs "Uvicorn running on http://0.0.0.0:9009")
+    # Serve (logs "Uvicorn running on http://0.0.0.0:9003")
     asyncio.run(uvicorn_server.serve())

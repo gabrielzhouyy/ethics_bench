@@ -28,7 +28,7 @@ COPY . .
 RUN mkdir -p src/green_agent/agent_logs
 
 # Expose green agent port
-EXPOSE 9009
+EXPOSE 9003
 
-# Run green agent server
-CMD ["python", "-m", "src.green_agent.green_server"]
+# Run green agent with uvicorn directly
+CMD ["uvicorn", "src.green_agent.green_server:a2a_app", "--host", "0.0.0.0", "--port", "9003"]

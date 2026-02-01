@@ -28,7 +28,7 @@ COPY . .
 RUN mkdir -p src/white_agent/agent_logs
 
 # Expose white agent port
-EXPOSE 9019
+EXPOSE 9002
 
-# Run white agent
-CMD ["python", "-m", "src.white_agent.agent"]
+# Run white agent with uvicorn directly
+CMD ["uvicorn", "src.white_agent.agent:a2a_app", "--host", "0.0.0.0", "--port", "9002"]
