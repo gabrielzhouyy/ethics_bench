@@ -128,11 +128,11 @@ if __name__ == "__main__":
     elif os.getenv("AGENT_CARD_URL"):
         agent_url = os.getenv("AGENT_CARD_URL")
     elif os.getenv("GREEN_AGENT_URL"):
-        # Extract just the base URL without path (e.g., http://green-agent:9009)
+        # Extract just the base URL without path (e.g., http://green-agent:9003)
         agent_url = os.getenv("GREEN_AGENT_URL").rstrip('/')
     else:
         # Default: use Docker service name with underscore (ethics_bench docker-compose)
-        agent_url = "http://green-agent:9009"
+        agent_url = "http://green-agent:9003"
     
     # Auto-detect environment for informational message
     hostname = socket.gethostname()
