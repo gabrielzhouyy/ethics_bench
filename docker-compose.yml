@@ -5,6 +5,8 @@ services:
       context: .
     image: ethics-bench:latest
     container_name: ethics-bench
+    env_file:
+      - .env
     environment:
       - ETHICS_BENCH_RUN_ID=${ETHICS_BENCH_RUN_ID:-dev}
     ports:

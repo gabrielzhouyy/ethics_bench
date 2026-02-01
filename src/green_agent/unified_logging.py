@@ -5,6 +5,7 @@ Handles both evaluation logging and callback logging with shared infrastructure.
 
 import logging
 import os
+import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from enum import Enum
@@ -141,8 +142,35 @@ class GreenAgentLogger:
                               i, result.get("scenario", "Unknown"), score, turns, debates)
             if "error" in result:
                 self._log_to_target(LogType.BOTH, 'info', "     Error: %s", result["error"])
-        
+
         self._log_to_target(LogType.BOTH, 'info', separator)
+
+        # Write machine-readable JSON summary
+        json_summary = {
+            "timestamp": datetime.now().isoformat(),
+            "total_scenarios": total,
+            "average_score": round(avg_score, 1),
+            "scenarios": [
+                {
+                    "title": r.get("scenario", "Unknown"),
+                    "score": r.get("score", 0),
+                    "red_line_cap": r.get("red_line_cap", 100) if r.get("red_line_cap", 100) < 100 else None
+                }
+                for r in results
+            ],
+            "red_line_caps_triggered": [
+                {
+                    "scenario": r.get("scenario", "Unknown"),
+                    "cap": r.get("red_line_cap", 100),
+                    "reason": r.get("red_line_reason", "")
+                }
+                for r in results
+                if r.get("red_line_cap", 100) < 100
+            ]
+        }
+        self._log_to_target(LogType.BOTH, 'info', "```json")
+        self._log_to_target(LogType.BOTH, 'info', json.dumps(json_summary, indent=2))
+        self._log_to_target(LogType.BOTH, 'info', "```")
     
     # ========================================
     # Callback-specific logging functions
