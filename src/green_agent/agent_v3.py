@@ -210,7 +210,7 @@ from src.green_agent.scenarios import SCENARIOS
 
 load_dotenv()
 
-model_name = os.getenv("MODEL", "gemini-2.0-flash-exp")
+model_name = os.getenv("MODEL", "gemini-2.0-flash")
 DETERMINISTIC_MODE = os.getenv("DETERMINISTIC", "false").lower() == "true"
 BASE_TEMPERATURE = 0.0 if DETERMINISTIC_MODE else None  # None means use defaults
 
