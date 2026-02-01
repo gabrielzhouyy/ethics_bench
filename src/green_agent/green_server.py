@@ -3,13 +3,19 @@ Green Agent A2A Server
 Exposes the multi-agent evaluation system via A2A protocol for AgentBeats integration.
 """
 import os
+import asyncio
+import json
 from google.adk import Agent
 from google.adk.a2a.utils.agent_to_a2a import to_a2a
 from google.genai import types
 from dotenv import load_dotenv
 from a2a.types import AgentCard, AgentSkill, AgentCapabilities
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from src.green_agent.agent_v3 import run_evaluation_v3
+from src.leaderboard.leaderboard import save_evaluation_results
+from src.leaderboard.provenance import record_submission_provenance
 
 load_dotenv()
 
@@ -108,6 +114,108 @@ async def handle_evaluation_request(url: str = None) -> dict:
         }
 
 
+# Create custom A2A app with evaluation intercept
+def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard) -> FastAPI:
+    """Create an A2A FastAPI app that intercepts messages to run evaluation."""
+    # Start with the standard A2A app
+    base_app = to_a2a(agent, agent_card=agent_card)
+    
+    # Override the POST /jsonrpc endpoint to intercept evaluation requests
+    original_jsonrpc_handler = None
+    for route in base_app.routes:
+        if hasattr(route, 'path') and route.path == '/jsonrpc' and hasattr(route, 'endpoint'):
+            original_jsonrpc_handler = route.endpoint
+            break
+    
+    @base_app.post("/jsonrpc")
+    async def custom_jsonrpc_handler(request: Request):
+        """Custom handler that detects evaluation requests and runs the pipeline."""
+        try:
+            body = await request.json()
+            print(f"[GREEN_AGENT] Received A2A request: {json.dumps(body, indent=2)}")
+            
+            # Check if this is an evaluation request (method: "send_message" or similar)
+            if body.get("method") == "send_message":
+                params = body.get("params", {})
+                messages = params.get("messages", [])
+                
+                # Look for participant URL in the message content or metadata
+                participant_url = None
+                for msg in messages:
+                    content = msg.get("content", "")
+                    # Check if URL is explicitly mentioned in message
+                    if "http://" in content or "https://" in content:
+                        # Extract URL from content
+                        import re
+                        url_match = re.search(r'https?://[^\s]+', content)
+                        if url_match:
+                            participant_url = url_match.group(0)
+                            break
+                
+                # Also check metadata/context
+                metadata = params.get("metadata", {})
+                if not participant_url:
+                    participant_url = metadata.get("participant_url") or metadata.get("purple_agent_url")
+                
+                print(f"[GREEN_AGENT] Detected evaluation request for: {participant_url or 'default white agent'}")
+                
+                # Run the evaluation
+                results = await handle_evaluation_request(participant_url)
+                
+                # Save results to leaderboard
+                if results.get("evaluation_complete"):
+                    print(f"[GREEN_AGENT] Evaluation complete. Average score: {results.get('average_score')}")
+                    # Save to leaderboard
+                    try:
+                        save_evaluation_results(
+                            results=results.get("results", []),
+                            agent_name="evaluated_agent",
+                            persona="unknown"
+                        )
+                        record_submission_provenance(
+                            agent_name="evaluated_agent",
+                            green_image="ghcr.io/gabrielzhouyy/ethics_bench:latest",
+                            purple_image="unknown"
+                        )
+                    except Exception as e:
+                        print(f"[GREEN_AGENT] Warning: Could not save to leaderboard: {e}")
+                
+                # Return results in A2A response format
+                response_content = json.dumps(results, indent=2)
+                return JSONResponse({
+                    "jsonrpc": "2.0",
+                    "id": body.get("id"),
+                    "result": {
+                        "messages": [{
+                            "role": "assistant",
+                            "content": response_content
+                        }]
+                    }
+                })
+            
+            # For non-evaluation requests, use original handler
+            if original_jsonrpc_handler:
+                return await original_jsonrpc_handler(request)
+            else:
+                return JSONResponse({
+                    "jsonrpc": "2.0",
+                    "id": body.get("id"),
+                    "error": {"code": -32601, "message": "Method not found"}
+                })
+                
+        except Exception as e:
+            print(f"[GREEN_AGENT] Error in custom handler: {e}")
+            import traceback
+            traceback.print_exc()
+            return JSONResponse({
+                "jsonrpc": "2.0",
+                "id": body.get("id", None),
+                "error": {"code": -32603, "message": f"Internal error: {str(e)}"}
+            })
+    
+    return base_app
+
+
 if __name__ == "__main__":
     import argparse
     import socket
@@ -160,8 +268,8 @@ if __name__ == "__main__":
     # Create custom agent card with correct URL
     custom_card = create_custom_agent_card(url=agent_url)
     
-    # Single A2A app creation with custom card
-    a2a_app = to_a2a(green_agent, agent_card=custom_card)
+    # Create custom A2A app with evaluation intercept
+    a2a_app = create_evaluation_a2a_app(green_agent, agent_card=custom_card)
     
     uvicorn_config = uvicorn.Config(a2a_app, host=args.host, port=args.port)
     uvicorn_server = uvicorn.Server(uvicorn_config)
