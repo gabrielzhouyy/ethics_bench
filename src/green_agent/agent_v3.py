@@ -635,8 +635,23 @@ Your classification (respond with ONLY one word, either "ASKING_QUESTIONS" or "F
                 return "FINAL_ANSWER"
     except Exception as e:
         print(f"   ⚠️  Error classifying response: {e}, using fallback logic")
-        # Fallback logic
-        if 'before i' in response_text.lower() or 'i need' in response_text.lower():
+
+        # Check for API key issues specifically - this is a critical config error
+        error_str = str(e).lower()
+        if 'api_key' in error_str or 'api key' in error_str or 'authentication' in error_str:
+            print(f"   ❌ CRITICAL: API key issue detected. Check GOOGLE_API_KEY environment variable.")
+            # Re-raise to surface the configuration error rather than silently failing
+            raise RuntimeError(f"API key configuration error: {e}") from e
+
+        # For other transient errors, use expanded fallback logic
+        # Prefer ASKING_QUESTIONS to allow conversation to continue
+        response_lower = response_text.lower()
+        question_indicators = [
+            'before i', 'i need', 'could you', 'can you', 'what is', 'what are',
+            'how would', 'who is', 'please provide', 'i would like', 'clarify',
+            'more information', 'tell me', 'explain', '?'
+        ]
+        if any(indicator in response_lower for indicator in question_indicators):
             return "ASKING_QUESTIONS"
         return "FINAL_ANSWER"
 
@@ -1439,7 +1454,22 @@ async def run_evaluation_v3(white_agent_url: str = "http://localhost:9002"):
     if DETERMINISTIC_MODE:
         print(f"Mode: DETERMINISTIC (temperature=0.0 for reproducibility)")
     print(f"{'='*60}\n")
-    
+
+    # Early validation: Ensure API key is configured before starting evaluation
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "GOOGLE_API_KEY environment variable is not set. "
+            "This is required for the Gemini API calls used in evaluation. "
+            "In GitHub Actions, ensure the secret is configured and passed to the container."
+        )
+    if len(api_key) < 10:
+        raise RuntimeError(
+            f"GOOGLE_API_KEY appears invalid (length={len(api_key)}). "
+            "Check that the secret value is correctly configured."
+        )
+    print(f"✓ API key validated (length={len(api_key)})")
+
     results = []
     
     # Select 3 random scenarios

@@ -126,17 +126,21 @@ def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
     
     class EvaluationMiddleware(BaseHTTPMiddleware):
         async def dispatch(self, request: Request, call_next):
-            # Only intercept POST requests to /jsonrpc
-            if request.method == "POST" and request.url.path == "/jsonrpc":
+            # Intercept POST requests to A2A endpoints (both / and /jsonrpc are used by different clients)
+            if request.method == "POST" and request.url.path in ("/", "/jsonrpc"):
                 try:
                     # Read the request body
                     body_bytes = await request.body()
                     body = json.loads(body_bytes)
-                    
-                    print(f"[GREEN_AGENT] Received A2A request: {json.dumps(body, indent=2)}")
-                    
+
+                    method = body.get("method", "NO_METHOD")
+                    print(f"[GREEN_AGENT] Received A2A request to {request.url.path}, method={method}")
+                    print(f"[GREEN_AGENT] Request body: {json.dumps(body, indent=2)}")
+
                     # Check if this is an evaluation request (A2A protocol uses "message/send")
-                    if body.get("method") in ("message/send", "send_message"):
+                    # Also accept tasks/send which some A2A implementations use
+                    if method in ("message/send", "send_message", "tasks/send", "message.send"):
+                        print(f"[GREEN_AGENT] ✓ Matched evaluation trigger method: {method}")
                         params = body.get("params", {})
 
                         # Extract participant URL from message content or metadata
@@ -159,9 +163,11 @@ def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
                             participant_url = metadata.get("participant_url") or metadata.get("white_agent_url")
                         
                         print(f"[GREEN_AGENT] Detected evaluation request for: {participant_url or 'default white agent'}")
-                        
+                        print(f"[GREEN_AGENT] 🚀 Starting full evaluation pipeline (run_evaluation_v3)...")
+
                         # Run the evaluation
                         results = await handle_evaluation_request(participant_url)
+                        print(f"[GREEN_AGENT] ✓ Evaluation pipeline completed")
                         
                         # Save results to leaderboard
                         if results.get("evaluation_complete"):
@@ -196,12 +202,51 @@ def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
                             content=json.dumps(response_data),
                             media_type="application/json"
                         )
-                
+                    else:
+                        # Method didn't match - log for debugging but still run evaluation
+                        # since POST to root path is likely an evaluation trigger
+                        print(f"[GREEN_AGENT] ⚠️ Unknown method '{method}', but triggering evaluation anyway")
+                        print(f"[GREEN_AGENT] 🚀 Starting evaluation pipeline...")
+
+                        results = await handle_evaluation_request(None)  # Use default white agent URL
+                        print(f"[GREEN_AGENT] ✓ Evaluation pipeline completed")
+
+                        response_content = json.dumps(results, indent=2)
+                        response_data = {
+                            "jsonrpc": "2.0",
+                            "id": body.get("id"),
+                            "result": {
+                                "messages": [{
+                                    "role": "assistant",
+                                    "content": response_content
+                                }]
+                            }
+                        }
+                        return StarletteResponse(
+                            content=json.dumps(response_data),
+                            media_type="application/json"
+                        )
+
                 except Exception as e:
                     print(f"[GREEN_AGENT] Error in middleware: {e}")
                     import traceback
                     traceback.print_exc()
-            
+
+                    # Return error response instead of falling through
+                    error_response = {
+                        "jsonrpc": "2.0",
+                        "id": body.get("id") if 'body' in dir() else None,
+                        "error": {
+                            "code": -32000,
+                            "message": f"Evaluation error: {str(e)}"
+                        }
+                    }
+                    return StarletteResponse(
+                        content=json.dumps(error_response),
+                        media_type="application/json",
+                        status_code=500
+                    )
+
             # For all other requests, pass through to original handler
             return await call_next(request)
     
