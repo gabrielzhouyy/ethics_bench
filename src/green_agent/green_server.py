@@ -19,7 +19,7 @@ from src.leaderboard.provenance import record_submission_provenance
 
 load_dotenv()
 
-model_name = os.getenv("MODEL", "gemini-2.0-flash-exp")
+model_name = os.getenv("MODEL", "gemini-2.0-flash")
 white_agent_url = os.getenv("WHITE_AGENT_URL", "http://white-agent:9002")  # Docker-friendly default
 
 # Create the green evaluation agent

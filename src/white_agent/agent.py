@@ -27,8 +27,8 @@ logging.basicConfig(
 # Agent Configuration
 # ========================================
 
-# Get model from environment variable, default to gemini-2.0-flash-exp
-MODEL = os.getenv("MODEL", "gemini-2.0-flash-exp")
+# Get model from environment variable, default to gemini-2.0-flash
+MODEL = os.getenv("MODEL", "gemini-2.0-flash")
 
 # Create a simple root agent that responds like a school teacher
 root_agent = Agent(
