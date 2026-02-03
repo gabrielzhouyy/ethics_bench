@@ -30,7 +30,7 @@ async def get_agent_card(url: str) -> AgentCard | None:
     Returns:
         AgentCard if successful, None otherwise
     """
-    httpx_client = httpx.AsyncClient()
+    httpx_client = httpx.AsyncClient(timeout=30.0)
     resolver = A2ACardResolver(httpx_client=httpx_client, base_url=url)
     
     try:
