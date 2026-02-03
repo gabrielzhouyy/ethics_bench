@@ -30,6 +30,10 @@ logging.basicConfig(
 # Get model from environment variable, default to gemini-2.0-flash
 MODEL = os.getenv("MODEL", "gemini-2.0-flash")
 
+# Get A2A host from environment variable, default to localhost
+# In Docker, set A2A_HOST to the container name (e.g., "white_agent")
+A2A_HOST = os.getenv("A2A_HOST", "localhost")
+
 # Create a simple root agent that responds like a school teacher
 root_agent = Agent(
     name="helpful_teacher",
@@ -65,8 +69,9 @@ Talk to your students the way a good teacher would - with warmth, wisdom, and ca
 
 # Expose the agent via A2A protocol using official Google ADK pattern
 # This creates a FastAPI app that serves the agent at port 9002
-# Agent card will be available at: http://localhost:9002/.well-known/agent-card.json
-a2a_app = to_a2a(root_agent, port=9002)
+# Agent card will be available at: http://{A2A_HOST}:9002/.well-known/agent-card.json
+# In Docker, set A2A_HOST env var to the container name for proper agent card URL
+a2a_app = to_a2a(root_agent, host=A2A_HOST, port=9002)
 
 # To run this agent:
 # uvicorn src.white_agent.agent:a2a_app --host localhost --port 9002

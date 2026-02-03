@@ -188,23 +188,24 @@ def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
                             except Exception as e:
                                 print(f"[GREEN_AGENT] Warning: Could not save to leaderboard: {e}")
                         
-                        # Return results in A2A response format (artifacts with parts)
+                        # Return results in A2A-compliant Message format
                         import uuid as uuid_module
                         response_content = json.dumps(results, indent=2)
-                        artifact_id = uuid_module.uuid4().hex
+                        message_id = uuid_module.uuid4().hex
                         response_data = {
                             "jsonrpc": "2.0",
                             "id": body.get("id"),
                             "result": {
-                                "artifacts": [{
-                                    "artifact_id": artifact_id,
-                                    "parts": [{
-                                        "text": response_content
-                                    }]
+                                "kind": "message",
+                                "messageId": message_id,
+                                "role": "agent",
+                                "parts": [{
+                                    "kind": "text",
+                                    "text": response_content
                                 }]
                             }
                         }
-                        print(f"[GREEN_AGENT] ✓ Returning A2A response (artifact_id={artifact_id[:8]}...)")
+                        print(f"[GREEN_AGENT] ✓ Returning A2A response (messageId={message_id[:8]}...)")
                         return StarletteResponse(
                             content=json.dumps(response_data),
                             media_type="application/json"
@@ -220,20 +221,21 @@ def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
 
                         import uuid as uuid_module
                         response_content = json.dumps(results, indent=2)
-                        artifact_id = uuid_module.uuid4().hex
+                        message_id = uuid_module.uuid4().hex
                         response_data = {
                             "jsonrpc": "2.0",
                             "id": body.get("id"),
                             "result": {
-                                "artifacts": [{
-                                    "artifact_id": artifact_id,
-                                    "parts": [{
-                                        "text": response_content
-                                    }]
+                                "kind": "message",
+                                "messageId": message_id,
+                                "role": "agent",
+                                "parts": [{
+                                    "kind": "text",
+                                    "text": response_content
                                 }]
                             }
                         }
-                        print(f"[GREEN_AGENT] ✓ Returning A2A response (artifact_id={artifact_id[:8]}...) (fallback path)")
+                        print(f"[GREEN_AGENT] ✓ Returning A2A response (messageId={message_id[:8]}...) (fallback path)")
                         return StarletteResponse(
                             content=json.dumps(response_data),
                             media_type="application/json"
