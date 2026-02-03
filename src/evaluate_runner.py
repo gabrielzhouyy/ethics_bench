@@ -91,6 +91,7 @@ async def run_white_agent(white_image: str) -> Optional[subprocess.Popen]:
                 "--rm",
                 "-p", f"{WHITE_AGENT_PORT}:{WHITE_AGENT_PORT}",
                 "--name", "ethics-bench-white-agent",
+                "-e", "A2A_HOST=localhost",  # Use localhost since green agent connects via host port
                 white_image
             ],
             stdout=subprocess.PIPE,

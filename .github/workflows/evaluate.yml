@@ -58,7 +58,6 @@ jobs:
           WHITE_AGENT_IMAGE: ${{ inputs.white_agent_image || 'ghcr.io/gabrielzhouyy/white_agent:latest' }}
           GREEN_AGENT_IMAGE: ${{ inputs.green_agent_image || 'ghcr.io/gabrielzhouyy/ethics_bench:latest' }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          WHITE_AGENT_URL: http://white-agent:9002  # Added explicit URL for white agent
         run: |
           python -m src.evaluate_runner \
             --white-image "$WHITE_AGENT_IMAGE" \
