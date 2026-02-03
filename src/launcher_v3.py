@@ -27,7 +27,10 @@ async def launch_evaluation_v3():
     print(f"\nRun ID: {run_id}")
     
     # Configuration
-    white_url = "http://localhost:9002"
+    # Use environment variable for white agent URL (defaults to Docker-friendly hostname)
+    # This allows the launcher to work both locally (set WHITE_AGENT_URL=http://localhost:9002)
+    # and in containerized environments (uses white-agent:9002 for inter-container communication)
+    white_url = os.getenv("WHITE_AGENT_URL", "http://white-agent:9002")
     
     # Set environment variable
     env = os.environ.copy()

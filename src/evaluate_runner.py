@@ -31,7 +31,9 @@ from src.my_util import my_a2a
 DEFAULT_WHITE_IMAGE = "ghcr.io/gabrielzhouyy/white_agent:latest"
 DEFAULT_GREEN_IMAGE = "ghcr.io/gabrielzhouyy/ethics_bench:latest"
 WHITE_AGENT_PORT = 9002
-WHITE_AGENT_URL = f"http://localhost:{WHITE_AGENT_PORT}"
+# Use environment variable to allow override for different deployment scenarios
+# Default to localhost for local testing, but can be set to container hostname for Docker deployments
+WHITE_AGENT_URL = os.getenv("WHITE_AGENT_URL", f"http://localhost:{WHITE_AGENT_PORT}")
 
 
 def pull_image(image_name: str, platform: str = "linux/amd64") -> bool:

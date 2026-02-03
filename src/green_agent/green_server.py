@@ -176,14 +176,15 @@ def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
                             print(f"[GREEN_AGENT] Evaluation complete. Average score: {results.get('average_score')}")
                             try:
                                 save_evaluation_results(
-                                    results=results.get("results", []),
-                                    agent_name="evaluated_agent",
-                                    persona="unknown"
+                                    participant_name="evaluated_agent",
+                                    evaluation_results=results.get("results", []),
+                                    config={}
                                 )
                                 record_submission_provenance(
-                                    agent_name="evaluated_agent",
-                                    green_image="ghcr.io/gabrielzhouyy/ethics_bench:latest",
-                                    purple_image="unknown"
+                                    participant_name="evaluated_agent",
+                                    scenario_name="ethics_bench_multi_scenario",
+                                    green_agent_image="ghcr.io/gabrielzhouyy/ethics_bench:latest",
+                                    white_agent_image="unknown"
                                 )
                             except Exception as e:
                                 print(f"[GREEN_AGENT] Warning: Could not save to leaderboard: {e}")
