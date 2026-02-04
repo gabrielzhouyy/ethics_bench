@@ -95,8 +95,8 @@ async def handle_evaluation_request(url: str = None) -> dict:
         
         for result in results:
             summary["results"].append({
-                "scenario": result.get("scenario_title", "Unknown"),
-                "score": result.get("total_score", 0),
+                "scenario": result.get("scenario", "Unknown"),
+                "score": result.get("score", 0),
                 "conclusion_score": result.get("conclusion_score", 0),
                 "stakeholder_score": result.get("stakeholder_score", 0),
                 "framework_score": result.get("framework_comparison_score", 0),
@@ -104,7 +104,9 @@ async def handle_evaluation_request(url: str = None) -> dict:
                 "debate_iterations": result.get("debate_iterations", 0)
             })
         
-        avg_score = sum(r["score"] for r in summary["results"]) / len(summary["results"]) if summary["results"] else 0
+        # Ensure all scores are numeric and default to 0 if missing
+        valid_scores = [r.get("score", 0) for r in summary["results"] if isinstance(r.get("score", 0), (int, float))]
+        avg_score = sum(valid_scores) / len(valid_scores) if valid_scores else 0
         summary["average_score"] = round(avg_score, 2)
         
         return summary
