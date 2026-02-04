@@ -99,7 +99,9 @@ async def send_message(
     
     httpx_client = httpx.AsyncClient(timeout=120.0)
     try:
-        client = A2AClient(httpx_client=httpx_client, agent_card=card)
+        # Pass url to override agent_card's advertised URL (which may be localhost)
+        # This ensures messages go to the correct endpoint in Docker environments
+        client = A2AClient(httpx_client=httpx_client, agent_card=card, url=url)
         
         message_id = uuid.uuid4().hex
         params = MessageSendParams(
