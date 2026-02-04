@@ -172,6 +172,16 @@ def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
                         # Run the evaluation
                         results = await handle_evaluation_request(participant_url)
                         print(f"[GREEN_AGENT] ✓ Evaluation pipeline completed")
+
+                        # Write results directly to shared volume (bypass agentbeats-client)
+                        output_path = "/app/output/evaluation_results.json"
+                        try:
+                            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                            with open(output_path, "w") as f:
+                                json.dump(results, f, indent=2)
+                            print(f"[GREEN_AGENT] ✓ Results written to {output_path}")
+                        except Exception as write_err:
+                            print(f"[GREEN_AGENT] Warning: Could not write to {output_path}: {write_err}")
                         
                         # Save results to leaderboard
                         if results.get("evaluation_complete"):
@@ -221,6 +231,16 @@ def create_evaluation_a2a_app(agent: Agent, agent_card: AgentCard):
 
                         results = await handle_evaluation_request(None)  # Use default white agent URL
                         print(f"[GREEN_AGENT] ✓ Evaluation pipeline completed")
+
+                        # Write results directly to shared volume (bypass agentbeats-client)
+                        output_path = "/app/output/evaluation_results.json"
+                        try:
+                            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                            with open(output_path, "w") as f:
+                                json.dump(results, f, indent=2)
+                            print(f"[GREEN_AGENT] ✓ Results written to {output_path}")
+                        except Exception as write_err:
+                            print(f"[GREEN_AGENT] Warning: Could not write to {output_path}: {write_err}")
 
                         import uuid as uuid_module
                         response_content = json.dumps(results, indent=2)
