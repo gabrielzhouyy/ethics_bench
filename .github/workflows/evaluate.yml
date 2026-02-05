@@ -33,7 +33,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -76,31 +76,6 @@ jobs:
             submissions/
           retention-days: 30
       
-      - name: Create submission PR
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            
-            // Get latest result files
-            const resultsDir = './results';
-            const submissionsDir = './submissions';
-            
-            if (fs.existsSync(resultsDir)) {
-              const resultFiles = fs.readdirSync(resultsDir).sort().reverse();
-              const submissionFiles = fs.readdirSync(submissionsDir).sort().reverse();
-              
-              if (resultFiles.length > 0 && submissionFiles.length > 0) {
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-                const branchName = `submission-${timestamp}`;
-                
-                console.log(`Would create PR with results: ${resultFiles[0]}, ${submissionFiles[0]}`);
-                console.log(`Branch: ${branchName}`);
-              }
-            }
-      
       - name: Print results summary
         if: always()
         run: |
@@ -110,5 +85,5 @@ jobs:
             ls -lah results/ || echo "No results found"
             echo ""
             echo "Latest result:"
-            ls -t results/*.json 2>/dev/null | head -1 | xargs cat | python -m json.tool | head -50
+            ls -t results/*.json 2>/dev/null | head -1 | xargs --no-run-if-empty cat | python -m json.tool | head -50
           fi
